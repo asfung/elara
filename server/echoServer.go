@@ -6,6 +6,9 @@ import (
 	"github.com/asfung/elara/config"
 	"github.com/asfung/elara/database"
 	"github.com/asfung/elara/di"
+	"github.com/asfung/elara/internal/handlers"
+	"github.com/asfung/elara/internal/repositories"
+	"github.com/asfung/elara/internal/services/impl"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
@@ -49,7 +52,14 @@ func (s *echoServer) Start() {
 }
 
 func (s *echoServer) registerAuthRoutes(api *echo.Group) {
-	authHandler := s.container.AuthHandler
+	// authHandler := s.container.AuthHandler
+
+	userRepo := repositories.NewUserPostgresRepository(s.db)
+	authRepo := repositories.NewAuthPostgresRepository(s.db)
+	userService := impl.NewUserServiceImpl(userRepo)
+
+	authService := impl.NewAuthServiceImpl(authRepo, userRepo, userService)
+	authHandler := handlers.NewAuthHandler(authService)
 
 	// register auth routes
 	authGroup := api.Group("/auth")
