@@ -44,7 +44,7 @@ func ValidateToken(tokenStr string) (*models.Claims, error) {
 func RefreshToken(refreshToken string, user *entities.User) (string, error) {
 	// check if refreshToken matches user's stored refresh token from table User
 
-	if refreshToken != user.RefreshToken {
+	if refreshToken != *user.RefreshToken {
 		return "", errors.New("invalid refresh token")
 	}
 

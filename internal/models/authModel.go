@@ -7,6 +7,15 @@ import (
 )
 
 // Request DTOs
+type LoginrRequest struct {
+	Email    string `validate:"required,email"`
+	Password string `validate:"required,min=8"`
+}
+type RegisterRequest struct {
+	Username string `validate:"required"`
+	Email    string `validate:"required"`
+	Password string `validate:"required"`
+}
 
 // Response DTOs
 type AuthResponse struct {

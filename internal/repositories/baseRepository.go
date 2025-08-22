@@ -15,12 +15,18 @@ func NewBaseRepository[T any](db database.Database) *BaseRepository[T] {
 	return &BaseRepository[T]{db: db}
 }
 
-func (r *BaseRepository[T]) Create(entity *T) error {
-	return r.db.GetDb().Create(entity).Error
+func (r *BaseRepository[T]) Create(entity T) (T, error) {
+	if err := r.db.GetDb().Create(&entity).Error; err != nil {
+		return entity, err
+	}
+	return entity, nil
 }
 
-func (r *BaseRepository[T]) Update(entity *T) error {
-	return r.db.GetDb().Save(entity).Error
+func (r *BaseRepository[T]) Update(entity T) (T, error) {
+	if err := r.db.GetDb().Save(&entity).Error; err != nil {
+		return entity, err
+	}
+	return entity, nil
 }
 
 func (r *BaseRepository[T]) FindById(id any) (*T, error) {

@@ -9,38 +9,13 @@ import (
 )
 
 type userPostgresRepository struct {
-	db database.Database
+	*BaseRepository[entities.User]
 }
 
 func NewUserPostgresRepository(db database.Database) UserRepository {
 	return &userPostgresRepository{
-		db: db,
+		BaseRepository: NewBaseRepository[entities.User](db),
 	}
-}
-
-func (r *userPostgresRepository) Create(user entities.User) (entities.User, error) {
-	if err := r.db.GetDb().Create(&user).Error; err != nil {
-		return entities.User{}, err
-	}
-	return user, nil
-}
-
-func (r *userPostgresRepository) Update(user entities.User) (entities.User, error) {
-	if err := r.db.GetDb().Save(&user).Error; err != nil {
-		return entities.User{}, err
-	}
-	return user, nil
-}
-
-func (r *userPostgresRepository) FindById(id uint32) (entities.User, error) {
-	var user entities.User
-	if err := r.db.GetDb().First(&user, id).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entities.User{}, errors.New("user not found")
-		}
-		return entities.User{}, err
-	}
-	return user, nil
 }
 
 func (r *userPostgresRepository) FindByEmail(email string) (entities.User, error) {
@@ -63,11 +38,4 @@ func (r *userPostgresRepository) FindByRefreshToken(refreshToken string) (entiti
 		return entities.User{}, err
 	}
 	return user, nil
-}
-
-func (r *userPostgresRepository) Delete(id uint32) error {
-	if err := r.db.GetDb().Delete(&entities.User{}, id).Error; err != nil {
-		return err
-	}
-	return nil
 }

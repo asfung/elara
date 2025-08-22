@@ -10,5 +10,4 @@ type UserService interface {
 	UpdateUser(req models.UpdateUserRequest) (entities.User, error)
 	GetUserById(id uint32) (entities.User, error)
 	DeleteUser(id uint32) error
-	RefreshToken(req models.RefreshTokenRequest) (models.AuthResponse, error)
 }

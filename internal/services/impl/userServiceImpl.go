@@ -56,7 +56,7 @@ func (u *userServiceImpl) UpdateUser(req models.UpdateUserRequest) (entities.Use
 		user.LastName = req.LastName
 	}
 
-	updatedUser, err := u.repo.Update(user)
+	updatedUser, err := u.repo.Update(*user)
 	if err != nil {
 		return entities.User{}, err
 	}
@@ -69,39 +69,9 @@ func (u *userServiceImpl) GetUserById(id uint32) (entities.User, error) {
 	if err != nil {
 		return entities.User{}, err
 	}
-	return user, nil
+	return *user, nil
 }
 
 func (u *userServiceImpl) DeleteUser(id uint32) error {
 	return u.repo.Delete(id)
-}
-
-func (u *userServiceImpl) RefreshToken(req models.RefreshTokenRequest) (models.AuthResponse, error) {
-	panic("unimplemented")
-	// user, err := s.repo.FindByRefreshToken(req.RefreshToken)
-	// if err != nil {
-	// 	return models.AuthResponse{}, err
-	// }
-	// if user.RefreshToken != req.RefreshToken {
-	// 	return models.AuthResponse{}, errors.New("invalid refresh token")
-	// }
-
-	// newAccess := "new-access-token"
-	// newRefresh := "new-refresh-token"
-	// expiry := time.Now().Add(24 * time.Hour)
-
-	// user.AccessToken = newAccess
-	// user.RefreshToken = newRefresh
-	// user.ExpiresAt = expiry
-
-	// _, err = s.repo.Update(user)
-	// if err != nil {
-	// 	return models.AuthResponse{}, err
-	// }
-
-	// return models.AuthResponse{
-	// 	AccessToken:  newAccess,
-	// 	RefreshToken: newRefresh,
-	// 	ExpiresAt:    expiry,
-	// }, nil
 }

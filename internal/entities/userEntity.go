@@ -17,9 +17,9 @@ type User struct {
 	UserID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()" json:"userId"`
 	AvatarURL         *string   `json:"avatarUrl"`
 	Location          *string   `json:"location"`
-	AccessToken       string    `json:"accessToken"`
+	AccessToken       *string   `json:"accessToken"`
 	AccessTokenSecret *string   `json:"accessTokenSecret"`
-	RefreshToken      string    `json:"refreshToken"`
+	RefreshToken      *string   `json:"refreshToken"`
 	IDToken           *string   `json:"idToken"`
 	TimeStamp
 }
