@@ -5,28 +5,28 @@ import (
 
 	"github.com/asfung/elara/config"
 	"github.com/asfung/elara/database"
-	"github.com/asfung/elara/internal/handlers"
-	"github.com/asfung/elara/internal/repositories"
-	"github.com/asfung/elara/internal/services/impl"
+	"github.com/asfung/elara/di"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 )
 
 type echoServer struct {
-	app  *echo.Echo
-	db   database.Database
-	conf *config.Config
+	app       *echo.Echo
+	db        database.Database
+	conf      *config.Config
+	container *di.Container
 }
 
-func NewEchoServer(conf *config.Config, db database.Database) Server {
+func NewEchoServer(conf *config.Config, db database.Database, container *di.Container) Server {
 	echoApp := echo.New()
 	echoApp.Logger.SetLevel(log.DEBUG)
 
 	return &echoServer{
-		app:  echoApp,
-		db:   db,
-		conf: conf,
+		app:       echoApp,
+		db:        db,
+		conf:      conf,
+		container: container,
 	}
 }
 
@@ -49,13 +49,7 @@ func (s *echoServer) Start() {
 }
 
 func (s *echoServer) registerAuthRoutes(api *echo.Group) {
-	// dependencies
-	userRepo := repositories.NewUserPostgresRepository(s.db)
-	authRepo := repositories.NewAuthPostgresRepository(s.db)
-	userService := impl.NewUserServiceImpl(userRepo)
-
-	authService := impl.NewAuthServiceImpl(authRepo, userRepo, userService)
-	authHandler := handlers.NewAuthHandler(authService)
+	authHandler := s.container.AuthHandler
 
 	// register auth routes
 	authGroup := api.Group("/auth")
