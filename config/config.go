@@ -11,6 +11,7 @@ type (
 	Config struct {
 		Server *Server
 		Db     *Db
+		Jwt    *Jwt
 	}
 	Server struct {
 		Port int
@@ -24,6 +25,10 @@ type (
 		DBName   string
 		SSLMode  string
 		TimeZone string
+	}
+
+	Jwt struct {
+		Secret string
 	}
 )
 

@@ -8,3 +8,5 @@ db:
   dbname: elara_db
   sslmode: disable
   timezone: Asia/Jakarta
+jwt:
+  secret: sekret_bang

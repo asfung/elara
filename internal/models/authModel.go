@@ -19,9 +19,9 @@ type RegisterRequest struct {
 
 // Response DTOs
 type AuthResponse struct {
-	AccessToken  string
-	RefreshToken string
-	ExpiresAt    time.Time
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	ExpiresAt    time.Duration `json:"expires_at"`
 }
 type Claims struct {
 	UserID string `json:"user_id"`

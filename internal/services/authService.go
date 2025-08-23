@@ -6,8 +6,9 @@ import (
 )
 
 type AuthService interface {
-	Login(req models.LoginrRequest) (string, error)
+	Login(req models.LoginrRequest) (string, string, error)
 	Register(req models.AddUserRequest) (entities.User, error)
 	RefreshToken(req models.RefreshTokenRequest) (models.AuthResponse, error)
 	Logout() error
+	Verify(token string) (*entities.User, error)
 }

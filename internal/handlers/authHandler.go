@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/asfung/elara/internal/models"
 	"github.com/asfung/elara/internal/services"
@@ -22,16 +23,26 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	// if err := c.Validate(&req); err != nil {
-	// 	return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-	// }
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
 
-	token, err := h.authService.Login(req)
+	accessToken, refreshToken, err := h.authService.Login(req)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, map[string]string{"token": token})
+	data := models.AuthResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresAt:    (24 * time.Hour * 7),
+	}
+
+	response := models.ApiResponse{
+		Success: true,
+		Data:    data,
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
@@ -40,9 +51,9 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	// if err := c.Validate(&req); err != nil {
-	// 	return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-	// }
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
 
 	user, err := h.authService.Register(req)
 	if err != nil {
@@ -58,9 +69,9 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	// if err := c.Validate(&req); err != nil {
-	// 	return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
-	// }
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
 
 	authResp, err := h.authService.RefreshToken(req)
 	if err != nil {

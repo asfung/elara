@@ -2,6 +2,7 @@ package impl
 
 import (
 	"errors"
+	"time"
 
 	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
@@ -28,24 +29,30 @@ func NewAuthServiceImpl(
 	}
 }
 
-func (a *authServiceImpl) Login(req models.LoginrRequest) (string, error) {
+func (a *authServiceImpl) Login(req models.LoginrRequest) (string, string, error) {
 	email := req.Email
 	password := req.Password
 
 	user, err := a.userRepo.FindByEmail(email)
 	if err != nil {
-		return "error", err
+		return "error", "error", err
 	}
 
 	if user.Password == nil || !utils.VerifyPassword(password, *user.Password) {
-		return "", errors.New("invalid email or password")
+		return "", "", errors.New("invalid email or password")
 	}
 
-	token, err := utils.CreateToken(&user)
+	accessToken, err := utils.CreateToken(&user, 24*time.Hour*7)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return token, nil
+
+	refreshToken, err := utils.CreateToken(&user, 24*time.Hour*30)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (a *authServiceImpl) Register(req models.AddUserRequest) (entities.User, error) {
@@ -62,4 +69,17 @@ func (a *authServiceImpl) Logout() error {
 
 func (a *authServiceImpl) RefreshToken(req models.RefreshTokenRequest) (models.AuthResponse, error) {
 	panic("unimplemented")
+}
+
+func (a *authServiceImpl) Verify(token string) (*entities.User, error) {
+	claims, err := utils.VerifyToken(token)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := a.userRepo.FindById(claims.UserID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }
