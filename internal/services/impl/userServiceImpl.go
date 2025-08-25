@@ -26,6 +26,7 @@ func (u *userServiceImpl) CreateUser(req models.AddUserRequest) (entities.User, 
 
 	user := entities.User{
 		Username: req.Username,
+		Name:     req.Username,
 		Email:    req.Email,
 		Password: &hashedPassword,
 		Provider: "local",

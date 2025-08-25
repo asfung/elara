@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/charmbracelet/log"
 	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
 	"github.com/asfung/elara/internal/repositories"
@@ -49,6 +50,13 @@ func (a *authServiceImpl) Login(req models.LoginrRequest) (string, string, error
 
 	refreshToken, err := utils.CreateToken(&user, 24*time.Hour*30)
 	if err != nil {
+		return "", "", err
+	}
+
+	user.AccessToken = &accessToken
+	user.RefreshToken = &refreshToken
+	if _, err := a.userRepo.Update(user); err != nil {
+		log.Error(err)
 		return "", "", err
 	}
 
