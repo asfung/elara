@@ -64,7 +64,14 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group) {
 }
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
+	userRepo := repositories.NewUserPostgresRepository(s.db)
+	authRepo := repositories.NewAuthPostgresRepository(s.db)
+	userService := impl.NewUserServiceImpl(userRepo)
+	authService := impl.NewAuthServiceImpl(authRepo, userRepo, userService)
+	authHandler := handlers.NewAuthHandler(authService)
+
 	e.GET("/hello", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Hello!"})
 	})
+	e.GET("/authenticated", authHandler.Authenticated, AuthMiddleware(authService))
 }

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
 	"github.com/asfung/elara/internal/services"
 	"github.com/labstack/echo/v4"
@@ -87,4 +88,14 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "logged out"})
+}
+
+func (h *AuthHandler) Authenticated(c echo.Context) error {
+	user := c.Get("user").(*entities.User)
+	return c.JSON(http.StatusOK, models.ToUserResponse(*user))
+	// uuid, err := entities.NewV8(1)
+	// if err != nil {
+	// 	return err
+	// }
+	// return c.JSON(http.StatusOK, map[string]interface{}{"uuidGen": uuid})
 }

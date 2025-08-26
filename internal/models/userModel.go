@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/asfung/elara/internal/entities"
+	"github.com/google/uuid"
 )
 
 // Request DTOs
@@ -23,7 +24,8 @@ type RefreshTokenRequest struct {
 
 // Response DTOs
 type UserResponse struct {
-	Id        uint32
+	UserId    uuid.UUID
+	AvatarUrl *string
 	Username  string
 	Email     string
 	FirstName *string
@@ -33,7 +35,8 @@ type UserResponse struct {
 // Entity -> Response
 func ToUserResponse(user entities.User) UserResponse {
 	return UserResponse{
-		Id:        user.Id,
+		UserId: user.UserID,
+		AvatarUrl: user.AvatarURL,
 		Username:  user.Username,
 		Email:     user.Email,
 		FirstName: user.FirstName,

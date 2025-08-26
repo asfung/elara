@@ -24,6 +24,7 @@ type AuthResponse struct {
 	ExpiresAt    time.Duration `json:"expires_at"`
 }
 type Claims struct {
+	ID uint32 `json:"id"`
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims

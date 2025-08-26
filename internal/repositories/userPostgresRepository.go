@@ -39,3 +39,16 @@ func (r *userPostgresRepository) FindByRefreshToken(refreshToken string) (entiti
 	}
 	return user, nil
 }
+
+func (r *userPostgresRepository) FindByUserId(userId string) (entities.User, error) {
+	var user entities.User
+	if err := r.db.GetDb().Where("user_id = ?", userId).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return entities.User{}, errors.New("user not found")
+		}
+		return entities.User{}, err
+	}
+	return user, nil
+}
+
+

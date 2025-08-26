@@ -85,9 +85,11 @@ func (a *authServiceImpl) Verify(token string) (*entities.User, error) {
 		return nil, err
 	}
 
-	user, err := a.userRepo.FindById(claims.UserID)
+	log.Info(claims.UserID)
+	// user, err := a.userRepo.FindById(claims.UserID)
+	user, err := a.userRepo.FindByUserId(claims.UserID)
 	if err != nil {
 		return nil, err
 	}
-	return user, nil
+	return &user, nil
 }
