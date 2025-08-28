@@ -11,7 +11,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run internal/migrations/userMigrate.go [create|delete|refresh]")
+		fmt.Println("Usage: go run internal/migrations/user/userMigrate.go [create|delete|refresh]")
 		os.Exit(1)
 	}
 
