@@ -4,12 +4,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
 	"github.com/asfung/elara/internal/repositories"
 	"github.com/asfung/elara/internal/services"
 	"github.com/asfung/elara/utils"
+	"github.com/charmbracelet/log"
 )
 
 type authServiceImpl struct {
