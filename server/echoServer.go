@@ -59,7 +59,7 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group) {
 	authGroup := api.Group("/auth")
 	authGroup.POST("/login", authHandler.Login)
 	authGroup.POST("/register", authHandler.Register)
-	authGroup.POST("/refresh", authHandler.RefreshToken)
+	authGroup.POST("/refresh", authHandler.RefreshToken).Name = "auth.refresh.token"
 	authGroup.POST("/logout", authHandler.Logout)
 }
 

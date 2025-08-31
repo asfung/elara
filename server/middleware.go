@@ -33,10 +33,6 @@ func BaseMiddleware(e *echo.Echo) {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.Recover())
 	e.Use(RequestLoggerMiddleware)
-	// e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-	// 	Format: "method=${method}, uri=${uri}, status=${status}\n",
-	// 	Output: &logWriter{},
-	// }))
 
 	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 	// 	AllowOrigins: []string{"*"},
