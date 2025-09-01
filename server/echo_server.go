@@ -85,9 +85,9 @@ func (s *echoServer) registerBankRoutes(e *echo.Group) {
 
 	bankGroup := e.Group("/bank")
 	bankGroup.POST("", bankHandler.CreateBank)
-	bankGroup.PUT(":id", bankHandler.UpdateBank)
-	bankGroup.GET(":id", bankHandler.GetById)
-	bankGroup.DELETE(":id", bankHandler.DeleteBank)
+	bankGroup.PUT("/:id", bankHandler.UpdateBank)
+	bankGroup.GET("/:id", bankHandler.GetById)
+	bankGroup.DELETE("/:id", bankHandler.DeleteBank)
 }
 
 func (s *echoServer) registerBankAccountRoutes(e *echo.Group) {
@@ -100,7 +100,7 @@ func (s *echoServer) registerBankAccountRoutes(e *echo.Group) {
 
 	bankGroup := e.Group("/bank-accuont")
 	bankGroup.POST("", bankAccountHandler.CreateBankAccount)
-	bankGroup.PUT(":id", bankAccountHandler.UpdateBankAccount)
-	bankGroup.GET(":id", bankAccountHandler.GetById)
-	bankGroup.DELETE(":id", bankAccountHandler.DeleteBankAccount)
+	bankGroup.PUT("/:id", bankAccountHandler.UpdateBankAccount)
+	bankGroup.GET("/:id", bankAccountHandler.GetById)
+	bankGroup.DELETE("/:id", bankAccountHandler.DeleteBankAccount)
 }

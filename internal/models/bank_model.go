@@ -11,7 +11,7 @@ type AddBankRequest struct {
 	Status    string `json:"status" validate:"required"`
 }
 type UpdateBankRequest struct {
-	ID        string `json:"id" validate:"required"`
+	ID        string `json:"id" validate:"omitempty"`
 	Name      string `json:"name" validate:"omitempty"`
 	SwiftCode string `json:"swift_code" validate:"omitempty"`
 	Country   string `json:"country" validate:"omitempty"`
@@ -51,7 +51,7 @@ type AddBankAccountRequest struct {
 }
 
 type UpdateBankAccountRequest struct {
-	ID            string `json:"id" validate:"required"`
+	ID            string `json:"id" validate:"omitempty"`
 	AccountNumber string `json:"account_number" validate:"omitempty"`
 	AccountType   string `json:"account_type" validate:"omitempty"`
 	Verified      *bool  `json:"verified" validate:"omitempty"`

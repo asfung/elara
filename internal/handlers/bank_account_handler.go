@@ -38,6 +38,7 @@ func (h *BankAccountHandler) CreateBankAccount(c echo.Context) error {
 }
 
 func (h *BankAccountHandler) UpdateBankAccount(c echo.Context) error {
+	id := c.Param("id")
 	payload := new(models.UpdateBankAccountRequest)
 	if err := h.BindBodyRequest(c, payload); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
@@ -47,6 +48,7 @@ func (h *BankAccountHandler) UpdateBankAccount(c echo.Context) error {
 	if validationErros != nil {
 		return models.SendFailedValidationResponse(c, validationErros)
 	}
+	payload.ID = id
 
 	bankAccount, err := h.bankAccountService.UpdateBankAccount(*payload)
 	if err != nil {

@@ -37,6 +37,7 @@ func (h *BankHandler) CreateBank(c echo.Context) error {
 }
 
 func (h *BankHandler) UpdateBank(c echo.Context) error {
+	id := c.Param("id")
 	payload := new(models.UpdateBankRequest)
 	if err := h.BindBodyRequest(c, payload); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
@@ -46,6 +47,7 @@ func (h *BankHandler) UpdateBank(c echo.Context) error {
 	if validationErros != nil {
 		return models.SendFailedValidationResponse(c, validationErros)
 	}
+	payload.ID = id
 
 	bank, err := h.bankService.UpdateBank(*payload)
 	if err != nil {
