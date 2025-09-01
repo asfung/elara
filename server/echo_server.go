@@ -37,6 +37,8 @@ func (s *echoServer) Start() {
 
 	s.initializeHelloHttpHandler(api)
 	s.registerAuthRoutes(api)
+	s.registerBankRoutes(api)
+	s.registerAuthRoutes(api)
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Ok!"})
@@ -74,4 +76,31 @@ func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
 		return c.JSON(200, map[string]interface{}{"message": "Hello!"})
 	})
 	e.GET("/authenticated", authHandler.Authenticated, AuthMiddleware(authService))
+}
+
+func (s *echoServer) registerBankRoutes(e *echo.Group) {
+	bankRepo := repositories.NewBankPostgresRepository(s.db)
+	bankService := impl.NewBankServiceImpl(bankRepo)
+	bankHandler := handlers.NewBankHandler(bankService)
+
+	bankGroup := e.Group("/bank")
+	bankGroup.POST("", bankHandler.CreateBank)
+	bankGroup.PUT(":id", bankHandler.UpdateBank)
+	bankGroup.GET(":id", bankHandler.GetById)
+	bankGroup.DELETE(":id", bankHandler.DeleteBank)
+}
+
+func (s *echoServer) registerBankAccountRoutes(e *echo.Group) {
+	bankRepo := repositories.NewBankPostgresRepository(s.db)
+	bankService := impl.NewBankServiceImpl(bankRepo)
+
+	bankAccountRepo := repositories.NewBankAccountPostgresRepository(s.db)
+	bankAccountService := impl.NewBankAccountServiceImpl(bankAccountRepo, bankService)
+	bankAccountHandler := handlers.NewBankAccountHandler(bankAccountService)
+
+	bankGroup := e.Group("/bank-accuont")
+	bankGroup.POST("", bankAccountHandler.CreateBankAccount)
+	bankGroup.PUT(":id", bankAccountHandler.UpdateBankAccount)
+	bankGroup.GET(":id", bankAccountHandler.GetById)
+	bankGroup.DELETE(":id", bankAccountHandler.DeleteBankAccount)
 }
