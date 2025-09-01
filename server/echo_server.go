@@ -38,7 +38,7 @@ func (s *echoServer) Start() {
 	s.initializeHelloHttpHandler(api)
 	s.registerAuthRoutes(api)
 	s.registerBankRoutes(api)
-	s.registerAuthRoutes(api)
+	s.registerBankAccountRoutes(api)
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Ok!"})
