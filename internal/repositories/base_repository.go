@@ -31,7 +31,8 @@ func (r *BaseRepository[T]) Update(entity T) (T, error) {
 
 func (r *BaseRepository[T]) FindById(id any) (*T, error) {
 	var entity T
-	if err := r.db.GetDb().First(&entity, id).Error; err != nil {
+	// if err := r.db.GetDb().First(&entity, id).Error; err != nil {
+	if err := r.db.GetDb().First(&entity, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("record not found")
 		}

@@ -5,6 +5,7 @@ import (
 
 	"github.com/asfung/elara/config"
 	"github.com/asfung/elara/database"
+	"github.com/asfung/elara/internal/container"
 	"github.com/asfung/elara/internal/handlers"
 	"github.com/asfung/elara/internal/repositories"
 	"github.com/asfung/elara/internal/services/impl"
@@ -34,11 +35,13 @@ func (s *echoServer) Start() {
 	BaseMiddleware(s.app)
 
 	api := s.app.Group("/api/v1")
+	// dependencies
+	c := container.NewContainer(s.db)
 
 	s.initializeHelloHttpHandler(api)
-	s.registerAuthRoutes(api)
-	s.registerBankRoutes(api)
-	s.registerBankAccountRoutes(api)
+	s.registerAuthRoutes(api, c.AuthHandler, AuthMiddleware(c.AuthService))
+	s.registerBankRoutes(api, c.BankHandler, AuthMiddleware(c.AuthService))
+	s.registerBankAccountRoutes(api, c.BankAccountHandler, AuthMiddleware(c.AuthService))
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Ok!"})
@@ -48,21 +51,16 @@ func (s *echoServer) Start() {
 	s.app.Logger.Fatal(s.app.Start(serverUrl))
 }
 
-func (s *echoServer) registerAuthRoutes(api *echo.Group) {
-	// authHandler := s.container.AuthHandler
-
-	userRepo := repositories.NewUserPostgresRepository(s.db)
-	authRepo := repositories.NewAuthPostgresRepository(s.db)
-	userService := impl.NewUserServiceImpl(userRepo)
-	authService := impl.NewAuthServiceImpl(authRepo, userRepo, userService)
-	authHandler := handlers.NewAuthHandler(authService)
-
+// ===============
+// ROUTES REGISTER
+// ===============
+func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.AuthHandler, authMiddleware echo.MiddlewareFunc) {
 	// register auth routes
 	authGroup := api.Group("/auth")
 	authGroup.POST("/login", authHandler.Login)
 	authGroup.POST("/register", authHandler.Register)
-	authGroup.POST("/refresh", authHandler.RefreshToken).Name = "auth.refresh.token"
-	authGroup.POST("/logout", authHandler.Logout)
+	authGroup.POST("/refresh", authHandler.RefreshToken, authMiddleware).Name = "auth.refresh.token"
+	authGroup.POST("/logout", authHandler.Logout, authMiddleware)
 }
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
@@ -78,27 +76,16 @@ func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
 	e.GET("/authenticated", authHandler.Authenticated, AuthMiddleware(authService))
 }
 
-func (s *echoServer) registerBankRoutes(e *echo.Group) {
-	bankRepo := repositories.NewBankPostgresRepository(s.db)
-	bankService := impl.NewBankServiceImpl(bankRepo)
-	bankHandler := handlers.NewBankHandler(bankService)
-
-	bankGroup := e.Group("/bank")
+func (s *echoServer) registerBankRoutes(e *echo.Group, bankHandler *handlers.BankHandler, authMiddleware echo.MiddlewareFunc) {
+	bankGroup := e.Group("/bank", authMiddleware)
 	bankGroup.POST("", bankHandler.CreateBank)
 	bankGroup.PUT("/:id", bankHandler.UpdateBank)
 	bankGroup.GET("/:id", bankHandler.GetById)
 	bankGroup.DELETE("/:id", bankHandler.DeleteBank)
 }
 
-func (s *echoServer) registerBankAccountRoutes(e *echo.Group) {
-	bankRepo := repositories.NewBankPostgresRepository(s.db)
-	bankService := impl.NewBankServiceImpl(bankRepo)
-
-	bankAccountRepo := repositories.NewBankAccountPostgresRepository(s.db)
-	bankAccountService := impl.NewBankAccountServiceImpl(bankAccountRepo, bankService)
-	bankAccountHandler := handlers.NewBankAccountHandler(bankAccountService)
-
-	bankGroup := e.Group("/bank-accuont")
+func (s *echoServer) registerBankAccountRoutes(e *echo.Group, bankAccountHandler *handlers.BankAccountHandler, authMiddleware echo.MiddlewareFunc) {
+	bankGroup := e.Group("/bank-accuont", authMiddleware)
 	bankGroup.POST("", bankAccountHandler.CreateBankAccount)
 	bankGroup.PUT("/:id", bankAccountHandler.UpdateBankAccount)
 	bankGroup.GET("/:id", bankAccountHandler.GetById)
