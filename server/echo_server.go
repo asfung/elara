@@ -126,7 +126,7 @@ func (s *echoServer) registerWalletTransactionRoutes(e *echo.Group, walletTransa
 }
 
 func (s *echoServer) registerP2PTransferRoutes(e *echo.Group, p2pTransferHandler *handlers.P2PTransferHandler, authMiddleware echo.MiddlewareFunc) {
-	p2pTransferGroup := e.Group("/wallet-transaction", authMiddleware)
+	p2pTransferGroup := e.Group("/p2p-transfer", authMiddleware)
 	p2pTransferGroup.POST("", p2pTransferHandler.CreateP2PTransfer)
 	p2pTransferGroup.PUT("/:id", p2pTransferHandler.Update2PTransfer)
 	p2pTransferGroup.GET("/:id", p2pTransferHandler.GetP2PTransferById)
