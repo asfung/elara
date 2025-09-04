@@ -59,13 +59,14 @@ type UpdateBankAccountRequest struct {
 
 // Response DTOs
 type BankAccountResponse struct {
-	ID            string `json:"id"`
-	UserId        string `json:"user_id"`
-	BankId        string `json:"bank_id"`
-	AccountNumber string `json:"account_number"`
-	AccountType   string `json:"account_type"`
-	Verified      bool   `json:"verified"`
-	CreatedAt     string `json:"created_at"`
+	ID            string        `json:"id"`
+	UserId        string        `json:"user_id"`
+	BankId        string        `json:"bank_id"`
+	AccountNumber string        `json:"account_number"`
+	AccountType   string        `json:"account_type"`
+	Verified      bool          `json:"verified"`
+	CreatedAt     string        `json:"created_at"`
+	Bank          *BankResponse `json:"bank,omitempty"`
 }
 
 // Entity -> Response
@@ -78,5 +79,28 @@ func ToBankAccountResponse(bankAccount entities.BankAccount) BankAccountResponse
 		AccountType:   bankAccount.AccountType,
 		Verified:      bankAccount.Verified,
 		CreatedAt:     bankAccount.CreatedAt.String(),
+	}
+}
+
+func ToBankAccountWithBankResponse(bankAccount entities.BankAccount, bank *entities.Bank) BankAccountResponse {
+	var bankResp *BankResponse
+	if bank != nil {
+		bankResp = &BankResponse{
+			ID:        bank.ID,
+			Name:      bank.Name,
+			SwiftCode: bank.SwiftCode,
+			Country:   bank.Country,
+			Status:    bank.Status,
+		}
+	}
+
+	return BankAccountResponse{
+		ID:            bankAccount.ID,
+		UserId:        bankAccount.UserID,
+		BankId:        bankAccount.BankID,
+		AccountNumber: bankAccount.AccountNumber,
+		AccountType:   bankAccount.AccountType,
+		Verified:      bankAccount.Verified,
+		Bank:          bankResp,
 	}
 }

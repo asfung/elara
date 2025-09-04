@@ -66,7 +66,7 @@ func (u *userServiceImpl) UpdateUser(req models.UpdateUserRequest) (entities.Use
 	return updatedUser, nil
 }
 
-func (u *userServiceImpl) GetUserById(id uint32) (entities.User, error) {
+func (u *userServiceImpl) GetUserById(id string) (entities.User, error) {
 	user, err := u.repo.FindById(id)
 	if err != nil {
 		return entities.User{}, err
@@ -74,6 +74,14 @@ func (u *userServiceImpl) GetUserById(id uint32) (entities.User, error) {
 	return *user, nil
 }
 
-func (u *userServiceImpl) DeleteUser(id uint32) error {
+func (u *userServiceImpl) DeleteUser(id string) error {
 	return u.repo.Delete(id)
+}
+
+func (u *userServiceImpl) GetUserByUserId(userId string) (entities.User, error) {
+	user, err := u.repo.FindByUserId(userId)
+	if err != nil {
+		return entities.User{}, err
+	}
+	return user, nil
 }

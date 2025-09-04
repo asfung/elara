@@ -11,4 +11,5 @@ type BankService interface {
 	GetBankById(id string) (entities.Bank, error)
 	DeleteBank(id string) error
 	GetBankBySwiftCode(swiftCode string) (entities.Bank, error)
+	GetBanksPaginated(req models.RequestParams) (models.PaginaterResolver, error)
 }

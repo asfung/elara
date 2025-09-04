@@ -18,10 +18,11 @@ var jwtSecret = []byte(config.GetConfig().Jwt.Secret)
 
 func CreateToken(user *entities.User, duration time.Duration) (string, error) {
 	claims := models.Claims{
-		UserID: user.UserID.String(),
-		Email:  user.Email,
+		ID:           user.Id,
+		UserID:       user.UserID.String(),
+		Email:        user.Email,
+		TokenVersion: user.TokenVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
-			// ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},

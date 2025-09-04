@@ -13,22 +13,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// TEMPORARY
-type logWriter struct{}
-
-func (lw *logWriter) Write(p []byte) (n int, err error) {
-	msg := string(p)
-
-	if strings.Contains(msg, "status=5") {
-		log.Error(msg)
-	} else if strings.Contains(msg, "status=4") {
-		log.Warn(msg)
-	} else {
-		log.Info(msg)
-	}
-	return len(p), nil
-}
-
 func BaseMiddleware(e *echo.Echo) {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.Recover())
@@ -71,7 +55,6 @@ func AuthMiddleware(authService services.AuthService) echo.MiddlewareFunc {
 
 			user, err := authService.Verify(token)
 			if err != nil {
-				// return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					return c.JSON(http.StatusUnauthorized, map[string]interface{}{
 						"message": "token is expired",
@@ -87,6 +70,7 @@ func AuthMiddleware(authService services.AuthService) echo.MiddlewareFunc {
 				if errors.Is(err, jwt.ErrTokenNotValidYet) {
 					return echo.NewHTTPError(http.StatusUnauthorized, "token not valid yet")
 				}
+				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
 			}
 
 			c.Set("user", user)

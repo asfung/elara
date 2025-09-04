@@ -13,6 +13,13 @@ type ApiResponse struct {
 	Error   string      `json:"error,omitempty"`
 }
 
+type PaginatedResponse struct {
+	Success       bool           `json:"success"`
+	Message       string         `json:"message"`
+	Data          interface{}    `json:"data"`
+	PaginatorInfo *PaginatorInfo `json:"paginator_info"`
+}
+
 type ValidationError struct {
 	Error     string `json:"error"`
 	Key       string `json:"key"`
@@ -41,6 +48,15 @@ func SendSuccessResponse(c echo.Context, message string, data interface{}) error
 		Success: true,
 		Message: message,
 		Data:    data,
+	})
+}
+
+func SendPaginatedResponse(c echo.Context, message string, paginator *PaginatorInfo, data interface{}) error {
+	return c.JSON(http.StatusOK, PaginatedResponse{
+		Success:       true,
+		Message:       message,
+		PaginatorInfo: paginator,
+		Data:          data,
 	})
 }
 

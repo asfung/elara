@@ -20,10 +20,7 @@ func NewBankServiceImpl(repo repositories.BankRepository) services.BankService {
 }
 
 func (b *bankServiceImpl) CreateBank(req models.AddBankRequest) (entities.Bank, error) {
-	bankExist, err := b.repo.FindBySwiftCode(req.SwiftCode)
-	if err != nil {
-		return entities.Bank{}, err
-	}
+	bankExist, _ := b.repo.FindBySwiftCode(req.SwiftCode)
 	if bankExist.ID != "" {
 		return entities.Bank{}, errors.New("bank with already exists")
 	}
@@ -83,4 +80,8 @@ func (b *bankServiceImpl) GetBankBySwiftCode(swiftCode string) (entities.Bank, e
 		return entities.Bank{}, err
 	}
 	return bank, nil
+}
+
+func (b *bankServiceImpl) GetBanksPaginated(req models.RequestParams) (models.PaginaterResolver, error) {
+	return b.repo.PaginateBanks(req)
 }

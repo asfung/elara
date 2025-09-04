@@ -3,6 +3,7 @@ package repositories
 import (
 	"github.com/asfung/elara/database"
 	"github.com/asfung/elara/internal/entities"
+	"github.com/asfung/elara/internal/models"
 )
 
 type BankPostgresRepository struct {
@@ -21,4 +22,15 @@ func (b *BankPostgresRepository) FindBySwiftCode(swiftCode string) (entities.Ban
 		return entities.Bank{}, err
 	}
 	return bank, nil
+}
+
+func (b *BankPostgresRepository) PaginateBanks(req models.RequestParams) (models.PaginaterResolver, error) {
+	stmt := b.db.GetDb().Model(&entities.Bank{})
+
+	paginator := new(models.PaginaterResolver).
+		Stmt(stmt).
+		Model(&[]entities.Bank{}). // important: pass a slice, not single entity
+		RequestParams(req)
+
+	return paginator.Paginate()
 }

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/asfung/elara/internal/models"
@@ -72,4 +73,24 @@ func (h *BankHandler) DeleteBank(c echo.Context) error {
 		return models.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
 	}
 	return models.SendSuccessResponse(c, "berhasil menghapus bank", nil)
+}
+
+func (h *BankHandler) GetBanks(c echo.Context) error {
+	page := 1
+	pageSize := 10
+
+	if p := c.QueryParam("page"); p != "" {
+		fmt.Sscanf(p, "%d", &page)
+	}
+	if ps := c.QueryParam("page_size"); ps != "" {
+		fmt.Sscanf(ps, "%d", &pageSize)
+	}
+
+	req := models.RequestParams{Page: page, PageSize: pageSize}
+	result, err := h.bankService.GetBanksPaginated(req)
+	if err != nil {
+		return models.SendInternalServerErrorResponse(c, err.Error())
+	}
+
+	return models.SendPaginatedResponse(c, "Banks retrieved successfully", result.PaginatorInfo, result.Data)
 }

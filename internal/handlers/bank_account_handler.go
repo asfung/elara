@@ -30,11 +30,11 @@ func (h *BankAccountHandler) CreateBankAccount(c echo.Context) error {
 		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
-	bankAccount, err := h.bankAccountService.CreateBankAccount(*payload)
+	bankAccount, bank, err := h.bankAccountService.CreateBankAccount(*payload)
 	if err != nil {
 		return models.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
 	}
-	return models.SendSuccessResponse(c, "berhasil membuat bank account", models.ToBankAccountResponse(bankAccount))
+	return models.SendSuccessResponse(c, "berhasil membuat bank account", models.ToBankAccountWithBankResponse(bankAccount, bank))
 }
 
 func (h *BankAccountHandler) UpdateBankAccount(c echo.Context) error {
@@ -50,20 +50,20 @@ func (h *BankAccountHandler) UpdateBankAccount(c echo.Context) error {
 	}
 	payload.ID = id
 
-	bankAccount, err := h.bankAccountService.UpdateBankAccount(*payload)
+	bankAccount, bank, err := h.bankAccountService.UpdateBankAccount(*payload)
 	if err != nil {
 		return models.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
 	}
-	return models.SendSuccessResponse(c, "berhasil update bank account", models.ToBankAccountResponse(bankAccount))
+	return models.SendSuccessResponse(c, "berhasil update bank account", models.ToBankAccountWithBankResponse(bankAccount, bank))
 }
 
 func (h *BankAccountHandler) GetById(c echo.Context) error {
 	id := c.Param("id")
-	bankAccount, err := h.bankAccountService.GetBankAccountById(id)
+	bankAccount, bank, err := h.bankAccountService.GetBankAccountById(id)
 	if err != nil {
 		return models.SendErrorResponse(c, err.Error(), http.StatusInternalServerError)
 	}
-	return models.SendSuccessResponse(c, "get Bank Account successful", models.ToBankAccountResponse(bankAccount))
+	return models.SendSuccessResponse(c, "get Bank Account successful", models.ToBankAccountWithBankResponse(bankAccount, bank))
 }
 
 func (h *BankAccountHandler) DeleteBankAccount(c echo.Context) error {

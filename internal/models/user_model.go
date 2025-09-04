@@ -19,7 +19,7 @@ type UpdateUserRequest struct {
 	LastName  *string
 }
 type RefreshTokenRequest struct {
-	RefreshToken string `json:"refreshToken" validate:"required"`
+	RefreshToken string `json:"refresh_token" validate:"required"`
 }
 
 // Response DTOs
@@ -35,7 +35,7 @@ type UserResponse struct {
 // Entity -> Response
 func ToUserResponse(user entities.User) UserResponse {
 	return UserResponse{
-		UserId: user.UserID,
+		UserId:    user.UserID,
 		AvatarUrl: user.AvatarURL,
 		Username:  user.Username,
 		Email:     user.Email,

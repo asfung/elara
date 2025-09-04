@@ -21,33 +21,38 @@ func NewBankAccountServiceImpl(repo repositories.BankAccountRepository, bankServ
 	}
 }
 
-func (b *bankAccountServiceImpl) CreateBankAccount(req models.AddBankAccountRequest) (entities.BankAccount, error) {
+func (b *bankAccountServiceImpl) CreateBankAccount(req models.AddBankAccountRequest) (entities.BankAccount, *entities.Bank, error) {
 	bankAccountExist, err := b.bankService.GetBankById(req.BankID)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
 
 	if bankAccountExist.ID == "" {
-		return entities.BankAccount{}, errors.New("bank_id not exist in bank")
+		return entities.BankAccount{}, &entities.Bank{}, errors.New("bank_id not exist in bank")
 	}
 
 	bankAccount, err := entities.NewBankAccount(req.UserID, req.BankID, req.AccountNumber, req.AccountType)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
 
 	createdBankAccount, err := b.repo.Create(*bankAccount)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
 
-	return createdBankAccount, err
+	bank, err := b.bankService.GetBankById(req.BankID)
+	if err != nil {
+		return entities.BankAccount{}, &entities.Bank{}, err
+	}
+
+	return createdBankAccount, &bank, nil
 }
 
-func (b *bankAccountServiceImpl) UpdateBankAccount(req models.UpdateBankAccountRequest) (entities.BankAccount, error) {
+func (b *bankAccountServiceImpl) UpdateBankAccount(req models.UpdateBankAccountRequest) (entities.BankAccount, *entities.Bank, error) {
 	bankAccount, err := b.repo.FindById(req.ID)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
 
 	if req.AccountNumber != "" {
@@ -62,28 +67,45 @@ func (b *bankAccountServiceImpl) UpdateBankAccount(req models.UpdateBankAccountR
 
 	updatedBankAccount, err := b.repo.Update(*bankAccount)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
 
-	return updatedBankAccount, nil
+	bank, err := b.bankService.GetBankById(updatedBankAccount.BankID)
+	if err != nil {
+		return entities.BankAccount{}, &entities.Bank{}, err
+	}
+
+	return updatedBankAccount, &bank, nil
 }
 
-func (b *bankAccountServiceImpl) GetBankAccountById(id string) (entities.BankAccount, error) {
+func (b *bankAccountServiceImpl) GetBankAccountById(id string) (entities.BankAccount, *entities.Bank, error) {
 	bankAccount, err := b.repo.FindById(id)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
-	return *bankAccount, nil
+
+	bank, err := b.bankService.GetBankById(bankAccount.BankID)
+	if err != nil {
+		return entities.BankAccount{}, &entities.Bank{}, err
+	}
+
+	return *bankAccount, &bank, nil
 }
 
 func (b *bankAccountServiceImpl) DeleteBankAccount(id string) error {
 	return b.repo.Delete(id)
 }
 
-func (b *bankAccountServiceImpl) GetBankAccountByUserId(userID string) (entities.BankAccount, error) {
+func (b *bankAccountServiceImpl) GetBankAccountByUserId(userID string) (entities.BankAccount, *entities.Bank, error) {
 	bankAccount, err := b.repo.FindByUserId(userID)
 	if err != nil {
-		return entities.BankAccount{}, err
+		return entities.BankAccount{}, &entities.Bank{}, err
 	}
-	return bankAccount, nil
+
+	bank, err := b.bankService.GetBankById(bankAccount.BankID)
+	if err != nil {
+		return entities.BankAccount{}, &entities.Bank{}, err
+	}
+
+	return bankAccount, &bank, nil
 }

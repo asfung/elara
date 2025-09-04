@@ -7,7 +7,7 @@ import (
 )
 
 // Request DTOs
-type LoginrRequest struct {
+type LoginRequest struct {
 	Email    string `validate:"required,email"`
 	Password string `validate:"required,min=8"`
 }
@@ -24,9 +24,10 @@ type AuthResponse struct {
 	ExpiresAt    time.Duration `json:"expires_at"`
 }
 type Claims struct {
-	ID uint32 `json:"id"`
-	UserID string `json:"user_id"`
-	Email  string `json:"email"`
+	ID           uint32 `json:"id"`
+	UserID       string `json:"user_id"`
+	Email        string `json:"email"`
+	TokenVersion int    `json:"token_version"`
 	jwt.RegisteredClaims
 }
 
