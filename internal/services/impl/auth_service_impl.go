@@ -2,7 +2,6 @@ package impl
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/asfung/elara/internal/entities"
@@ -92,12 +91,10 @@ func (a *authServiceImpl) Logout(token string) error {
 }
 
 func (a *authServiceImpl) RefreshToken(req models.RefreshTokenRequest) (models.AuthResponse, error) {
-	fmt.Println(req.RefreshToken)
 	claims, err := utils.VerifyToken(req.RefreshToken)
 	if err != nil {
 		return models.AuthResponse{}, errors.New("invalid or expired refresh token")
 	}
-	fmt.Println(claims)
 
 	user, err := a.userRepo.FindByUserId(claims.UserID)
 	if err != nil {

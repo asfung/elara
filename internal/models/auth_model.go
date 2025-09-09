@@ -19,9 +19,10 @@ type RegisterRequest struct {
 
 // Response DTOs
 type AuthResponse struct {
-	AccessToken  string        `json:"access_token"`
-	RefreshToken string        `json:"refresh_token"`
-	ExpiresAt    time.Duration `json:"expires_at"`
+	AccessToken          string        `json:"access_token"`
+	RefreshToken         string        `json:"refresh_token,omitempty"`
+	AccessTokenFormatted string        `json:"access_token_formatted"`
+	ExpiresAt            time.Duration `json:"expires_at"`
 }
 type Claims struct {
 	ID           uint32 `json:"id"`

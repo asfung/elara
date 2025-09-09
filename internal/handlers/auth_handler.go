@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/asfung/elara/internal/entities"
@@ -12,6 +11,7 @@ import (
 )
 
 type AuthHandler struct {
+	*Handler
 	authService services.AuthService
 }
 
@@ -34,10 +34,22 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
 
+	cookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/api/v1/auth/refresh",
+		Expires:  time.Now().Add(30 * 24 * time.Hour), // 30 days
+	}
+	c.SetCookie(cookie)
+
 	data := models.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresAt:    (24 * time.Hour * 7),
+		AccessToken:          accessToken,
+		AccessTokenFormatted: "Bearer " + accessToken,
+		// RefreshToken: refreshToken,
+		ExpiresAt: (24 * time.Hour * 7),
 	}
 
 	response := models.ApiResponse{
@@ -48,16 +60,18 @@ func (h *AuthHandler) Login(c echo.Context) error {
 }
 
 func (h *AuthHandler) Register(c echo.Context) error {
-	var req models.AddUserRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
+	payload := new(models.AddUserRequest)
+
+	if err := h.BindBodyRequest(c, payload); err != nil {
+		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	validateErros := h.ValidateBodyRequest(payload)
+	if validateErros != nil {
+		return models.SendFailedValidationResponse(c, validateErros)
 	}
 
-	user, err := h.authService.Register(req)
+	user, err := h.authService.Register(*payload)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -66,43 +80,63 @@ func (h *AuthHandler) Register(c echo.Context) error {
 }
 
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
-	authHeader := c.Request().Header.Get("Authorization")
-	if authHeader == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing authorization header"})
+	cookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, map[string]string{"error": "missing refresh token"})
 	}
 
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid authorization header format"})
-	}
-
-	refreshToken := parts[1]
+	refreshToken := cookie.Value
 
 	authResp, err := h.authService.RefreshToken(models.RefreshTokenRequest{RefreshToken: refreshToken})
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
 
-	return c.JSON(http.StatusOK, authResp)
+	newCookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    authResp.RefreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/api/v1/auth/refresh",
+		Expires:  time.Now().Add(30 * 24 * time.Hour),
+	}
+	c.SetCookie(newCookie)
 
+	return c.JSON(http.StatusOK, models.AuthResponse{
+		AccessToken:          authResp.AccessToken,
+		AccessTokenFormatted: "Bearer " + authResp.AccessToken,
+		ExpiresAt:            15 * time.Minute,
+	})
 }
 
 func (h *AuthHandler) Logout(c echo.Context) error {
-	authHeader := c.Request().Header.Get("Authorization")
-	if authHeader == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "missing authorization header"})
+	cookie, err := c.Cookie("refresh_token")
+	if err != nil {
+		return models.SendUnauthorizedResponse(c, "no refresh token cookie")
 	}
 
-	parts := strings.Split(authHeader, " ")
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid authorization header format"})
+	refreshToken := cookie.Value
+	_, err = h.authService.Verify(refreshToken)
+	if err != nil {
+		return models.SendUnauthorizedResponse(c, "invalid refresh token revoked")
 	}
 
-	token := parts[1]
-
-	if err := h.authService.Logout(token); err != nil {
-		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+	if err := h.authService.Logout(refreshToken); err != nil {
+		return models.SendUnauthorizedResponse(c, err.Error())
 	}
+
+	expiredCookie := &http.Cookie{
+		Name:     "refresh_token",
+		Value:    "",
+		Path:     "/api/v1/auth/refresh",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Unix(0, 0), // expired date
+		MaxAge:   -1,
+	}
+	c.SetCookie(expiredCookie)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "logout successful"})
 }
@@ -110,18 +144,4 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 func (h *AuthHandler) Authenticated(c echo.Context) error {
 	user := c.Get("user").(*entities.User)
 	return c.JSON(http.StatusOK, models.ToUserResponse(*user))
-
-	// id, err := gonanoid.New()
-	// if err != nil {
-	// 	return err
-	// }
-	// cu_id := cuid.New()
-
-	// return c.JSON(200, []interface{}{id, cu_id})
-
-	// uuid, err := entities.NewV8(1)
-	// if err != nil {
-	// 	return err
-	// }
-	// return c.JSON(http.StatusOK, map[string]interface{}{"uuidGen": uuid})
 }

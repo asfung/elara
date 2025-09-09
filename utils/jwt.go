@@ -31,6 +31,10 @@ func CreateToken(user *entities.User, duration time.Duration) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
+// ValidateToken performs an outdated operation.
+//
+// Deprecated: ValidateToken() is deprecated and should not be used.
+// Use VerifyToken(token) instead for improved functionality.
 func ValidateToken(tokenStr string) (*models.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenStr, &models.Claims{}, func(token *jwt.Token) (any, error) {
 		return jwtSecret, nil

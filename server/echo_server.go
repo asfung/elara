@@ -64,7 +64,7 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.A
 	authGroup.POST("/login", authHandler.Login)
 	authGroup.POST("/register", authHandler.Register)
 	authGroup.GET("/refresh", authHandler.RefreshToken, authMiddleware).Name = "auth.refresh.token"
-	authGroup.POST("/logout", authHandler.Logout, authMiddleware)
+	authGroup.POST("/logout", authHandler.Logout, authMiddleware, authMiddleware)
 }
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
