@@ -17,12 +17,6 @@ func BaseMiddleware(e *echo.Echo) {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.Recover())
 	e.Use(RequestLoggerMiddleware)
-
-	// e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-	// 	AllowOrigins: []string{"*"},
-	// 	AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
-	// 	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderXRequestedWith, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
-	// }))
 }
 
 func AuthMiddleware(authService services.AuthService) echo.MiddlewareFunc {

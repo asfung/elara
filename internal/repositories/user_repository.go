@@ -7,4 +7,5 @@ type UserRepository interface {
 	FindByEmail(email string) (entities.User, error)
 	FindByRefreshToken(refreshToken string) (entities.User, error)
 	FindByUserId(userId string) (entities.User, error)
+	FindByProvider(provider string, providerUserId string) (entities.User, error)
 }

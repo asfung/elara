@@ -7,7 +7,9 @@ import (
 	"github.com/asfung/elara/database"
 	"github.com/asfung/elara/internal/container"
 	"github.com/asfung/elara/internal/handlers"
+	"github.com/asfung/elara/internal/oauth"
 	"github.com/asfung/elara/internal/repositories"
+	"github.com/asfung/elara/internal/services"
 	"github.com/asfung/elara/internal/services/impl"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
@@ -34,12 +36,14 @@ func NewEchoServer(conf *config.Config, db database.Database) Server {
 func (s *echoServer) Start() {
 	BaseMiddleware(s.app)
 
+	oauth.InitProviders()
+
 	api := s.app.Group("/api/v1")
 	// dependencies
 	c := container.NewContainer(s.db)
 
 	s.initializeHelloHttpHandler(api)
-	s.registerAuthRoutes(api, c.AuthHandler, AuthMiddleware(c.AuthService))
+	s.registerAuthRoutes(api, c.AuthHandler, &c.AuthService, AuthMiddleware(c.AuthService))
 	s.registerBankRoutes(api, c.BankHandler, AuthMiddleware(c.AuthService))
 	s.registerBankAccountRoutes(api, c.BankAccountHandler, AuthMiddleware(c.AuthService))
 	s.registerCardRoutes(api, c.CardHandler, AuthMiddleware(c.AuthService))
@@ -58,13 +62,20 @@ func (s *echoServer) Start() {
 // ===============
 // ROUTES REGISTER
 // ===============
-func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.AuthHandler, authMiddleware echo.MiddlewareFunc) {
+func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.AuthHandler, authService *services.AuthService, authMiddleware echo.MiddlewareFunc) {
 	// register auth routes
 	authGroup := api.Group("/auth")
 	authGroup.POST("/login", authHandler.Login)
 	authGroup.POST("/register", authHandler.Register)
 	authGroup.GET("/refresh", authHandler.RefreshToken, authMiddleware).Name = "auth.refresh.token"
 	authGroup.POST("/logout", authHandler.Logout, authMiddleware, authMiddleware)
+
+	// oauth
+	oauthHandler := handlers.NewOAuthHandler(*authService, "")
+	oauthGroup := authGroup.Group("/oauth")
+	oauthGroup.GET("/:provider", oauthHandler.BeginAuth)
+	oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
+
 }
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {

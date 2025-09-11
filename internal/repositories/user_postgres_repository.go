@@ -51,4 +51,10 @@ func (r *userPostgresRepository) FindByUserId(userId string) (entities.User, err
 	return user, nil
 }
 
-
+func (r *userPostgresRepository) FindByProvider(provider string, providerUserId string) (entities.User, error) {
+	var user entities.User
+	if err := r.db.GetDb().Where("provider = ? AND provider_user_id = ?", provider, providerUserId).First(&user).Error; err != nil {
+		return entities.User{}, err
+	}
+	return user, nil
+}

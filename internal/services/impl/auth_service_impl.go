@@ -1,6 +1,7 @@
 package impl
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/asfung/elara/internal/services"
 	"github.com/asfung/elara/utils"
 	"github.com/charmbracelet/log"
+	"github.com/markbates/goth"
+	"gorm.io/gorm"
 )
 
 type authServiceImpl struct {
@@ -148,4 +151,71 @@ func (a *authServiceImpl) Verify(token string) (*entities.User, error) {
 	}
 
 	return &user, nil
+}
+
+func (a *authServiceImpl) OAuthLoginFromGothUser(gUser goth.User) (string, string, error) {
+
+	u, err := a.userRepo.FindByProvider(gUser.Provider, gUser.UserID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			// log.Info(gUser)
+			b, err := json.MarshalIndent(gUser, "", "  ")
+			if err != nil {
+				log.Printf("failed to marshal gUser: %v", err)
+			} else {
+				log.Info(string(b))
+			}
+			newUser := entities.User{
+				Provider:       gUser.Provider,
+				ProviderUserID: gUser.UserID, // its actually UserID from provider
+				Email:          gUser.Email,
+				Name:           gUser.Name,
+				FirstName:      &gUser.FirstName,
+				LastName:       &gUser.LastName,
+				Username:       utils.GenerateUsername(gUser.NickName),
+				AvatarURL:      &gUser.AvatarURL,
+				Location:       &gUser.Location,
+			}
+			created, err := a.userRepo.Create(newUser)
+			if err != nil {
+				return "", "", err
+			}
+			u = created
+		} else {
+			return "", "", err
+		}
+	}
+
+	accessToken, refreshToken, err := a.createTokensForUser(u)
+	if err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
+func (a *authServiceImpl) createTokensForUser(u entities.User) (string, string, error) {
+	user, err := a.userRepo.FindByEmail(u.Email)
+	if err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := utils.CreateToken(&user, 15*time.Minute)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := utils.CreateToken(&user, 24*time.Hour*30)
+	if err != nil {
+		return "", "", err
+	}
+
+	user.AccessToken = &accessToken
+	user.RefreshToken = &refreshToken
+	if _, err := a.userRepo.Update(user); err != nil {
+		log.Error(err)
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
 }
