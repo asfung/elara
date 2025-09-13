@@ -1,7 +1,6 @@
 package impl
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
@@ -158,13 +157,6 @@ func (a *authServiceImpl) OAuthLoginFromGothUser(gUser goth.User) (string, strin
 	u, err := a.userRepo.FindByProvider(gUser.Provider, gUser.UserID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			// log.Info(gUser)
-			b, err := json.MarshalIndent(gUser, "", "  ")
-			if err != nil {
-				log.Printf("failed to marshal gUser: %v", err)
-			} else {
-				log.Info(string(b))
-			}
 			newUser := entities.User{
 				Provider:       gUser.Provider,
 				ProviderUserID: gUser.UserID, // its actually UserID from provider
@@ -218,4 +210,13 @@ func (a *authServiceImpl) createTokensForUser(u entities.User) (string, string, 
 	}
 
 	return accessToken, refreshToken, nil
+}
+
+func (a *authServiceImpl) GetUserByEmail(email string) (entities.User, error) {
+	user, err := a.userRepo.FindByEmail(email)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	return user, nil
 }
