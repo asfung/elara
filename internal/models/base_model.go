@@ -43,6 +43,14 @@ type JSONErrorResponse struct {
 	Message string `json:"message"`
 }
 
+func SendResponse(c echo.Context, success bool, message string, data interface{}, statusCode int) error {
+	return c.JSON(statusCode, ApiResponse{
+		Success: success,
+		Message: message,
+		Data:    data,
+	})
+}
+
 func SendSuccessResponse(c echo.Context, message string, data interface{}) error {
 	return c.JSON(http.StatusOK, JSONSuccessResponse{
 		Success: true,

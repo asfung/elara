@@ -1,22 +1,30 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
 	"github.com/asfung/elara/internal/services"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 type AuthHandler struct {
 	*Handler
 	authService services.AuthService
+	otpService  services.OTPService
 }
 
-func NewAuthHandler(authService services.AuthService) *AuthHandler {
-	return &AuthHandler{authService: authService}
+func NewAuthHandler(authService services.AuthService, otpService services.OTPService) *AuthHandler {
+	return &AuthHandler{
+		authService: authService,
+		otpService:  otpService,
+	}
 }
 
 func (h *AuthHandler) Login(c echo.Context) error {
@@ -144,4 +152,128 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 func (h *AuthHandler) Authenticated(c echo.Context) error {
 	user := c.Get("user").(*entities.User)
 	return c.JSON(http.StatusOK, models.ToUserResponse(*user))
+}
+
+func (h *AuthHandler) CheckEmail(c echo.Context) error {
+	type request struct {
+		Email string `json:"email" validate:"required,email"`
+	}
+
+	var req request
+	if err := h.BindBodyRequest(c, req); err != nil {
+		return models.SendBadRequestResponse(c, err.Error())
+	}
+
+	validateErrors := h.ValidateBodyRequest(req)
+	if validateErrors != nil {
+		return models.SendFailedValidationResponse(c, validateErrors)
+	}
+
+	user, err := h.authService.GetUserByEmail(req.Email)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			res := map[string]interface{}{
+				"continue_url": os.Getenv("CLIENT_URL") + "/create-account/password",
+			}
+			return c.JSON(http.StatusOK, res)
+		}
+		return models.SendInternalServerErrorResponse(c, err.Error())
+	}
+	if user.UserID != uuid.Nil {
+		res := map[string]interface{}{
+			"continue_url": os.Getenv("CLIENT_URL") + "/log-in/password",
+		}
+		return c.JSON(http.StatusOK, res)
+	}
+
+	// idk what de fuck its gonna be
+	return c.JSON(http.StatusOK, nil)
+}
+
+func (h *AuthHandler) CreateAccount(c echo.Context) error {
+	type request struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
+	}
+	var req request
+	if err := h.BindBodyRequest(c, req); err != nil {
+		return models.SendBadRequestResponse(c, err.Error())
+	}
+
+	validateErrors := h.ValidateBodyRequest(req)
+	if validateErrors != nil {
+		return models.SendFailedValidationResponse(c, validateErrors)
+	}
+
+	user, err := h.authService.CreateAccountWithPassword(req.Email, req.Password)
+	if err != nil {
+		return models.SendInternalServerErrorResponse(c, err.Error())
+	}
+
+	data := map[string]interface{}{
+		"user_id": user.UserID,
+	}
+	// make it redirect to the http://localhost:6060/email-verification
+	location := os.Getenv("CLIENT_URL") + "/email-verification"
+	c.Redirect(http.StatusFound, location)
+
+	return models.SendResponse(c, true, "acccount created, please verify OTP", data, http.StatusCreated)
+}
+
+func (h *AuthHandler) VerifyPassword(c echo.Context) error {
+	type request struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
+	}
+	var req request
+	if err := h.BindBodyRequest(c, req); err != nil {
+		return models.SendBadRequestResponse(c, err.Error())
+	}
+
+	validateErrors := h.ValidateBodyRequest(req)
+	if validateErrors != nil {
+		return models.SendFailedValidationResponse(c, validateErrors)
+	}
+
+	isValid, err := h.authService.VerifyPassword(req.Email, req.Password)
+	if err != nil {
+		return models.SendUnauthorizedResponse(c, err.Error())
+	}
+
+	if isValid {
+		res := map[string]interface{}{
+			"continue_url": os.Getenv("CLIENT_URL") + "/email-verification",
+		}
+		return c.JSON(http.StatusOK, res)
+	}
+
+	return models.SendResponse(c, false, "Login Failed", nil, http.StatusUnauthorized)
+}
+
+func (h *AuthHandler) VerifyOTP(c echo.Context) error {
+	type request struct {
+		UserID string `json:"userId" validate:"required"`
+		OTP    string `json:"otp" validate:"required"`
+	}
+	var req request
+	if err := h.BindBodyRequest(c, req); err != nil {
+		return models.SendBadRequestResponse(c, err.Error())
+	}
+
+	validateErrors := h.ValidateBodyRequest(req)
+	if validateErrors != nil {
+		return models.SendFailedValidationResponse(c, validateErrors)
+	}
+
+	isValid, err := h.otpService.VerifyOTP(req.UserID, req.OTP)
+	if err != nil {
+		return models.SendResponse(c, false, err.Error(), nil, http.StatusBadRequest)
+	}
+
+	// make a response isValid
+	if isValid {
+		return models.SendSuccessResponse(c, "account verified, you can log in now", nil)
+	}
+
+	return models.SendErrorResponse(c, "account not verified", http.StatusUnauthorized)
 }

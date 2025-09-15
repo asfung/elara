@@ -30,6 +30,8 @@ func (u *userServiceImpl) CreateUser(req models.AddUserRequest) (entities.User, 
 		Email:    req.Email,
 		Password: &hashedPassword,
 		Provider: "local",
+		RoleID:   2,
+		// Description: utils.StringPtr("pending_verification"),
 	}
 
 	createdUser, err := u.repo.Create(user)

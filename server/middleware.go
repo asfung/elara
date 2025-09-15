@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/services"
 	"github.com/charmbracelet/log"
 	"github.com/golang-jwt/jwt/v5"
@@ -19,7 +20,7 @@ func BaseMiddleware(e *echo.Echo) {
 	e.Use(RequestLoggerMiddleware)
 }
 
-func AuthMiddleware(authService services.AuthService) echo.MiddlewareFunc {
+func AuthMiddleware(authService services.AuthService, roleService services.RoleService) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		var doOnce sync.Once
 		var registeredRoutes []*echo.Route
@@ -67,8 +68,30 @@ func AuthMiddleware(authService services.AuthService) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token")
 			}
 
+			userRole, err := roleService.GetRoleById(user.RoleID)
+			if err != nil {
+				log.Warn("middleware.AuthMiddleware() Error : ", err)
+			}
+
+			c.Set("user_role", userRole)
 			c.Set("user", user)
 			return next(c)
+		}
+	}
+}
+
+func RoleMiddleware(allowedRoles ...string) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+
+			userRole := c.Get("user_role").(entities.Role)
+			for _, role := range allowedRoles {
+				if strings.EqualFold(userRole.Name, role) {
+					return next(c)
+				}
+			}
+
+			return echo.NewHTTPError(http.StatusForbidden, "you do not have permission to access this resource")
 		}
 	}
 }

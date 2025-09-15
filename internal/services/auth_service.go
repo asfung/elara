@@ -14,4 +14,6 @@ type AuthService interface {
 	Verify(token string) (*entities.User, error)
 	OAuthLoginFromGothUser(goth.User) (accessToken string, refreshToken string, err error)
 	GetUserByEmail(email string) (entities.User, error)
+	CreateAccountWithPassword(email, password string) (entities.User, error)
+	VerifyPassword(email, password string) (bool, error)
 }

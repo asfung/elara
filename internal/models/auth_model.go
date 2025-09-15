@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/asfung/elara/internal/entities"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -31,5 +32,16 @@ type Claims struct {
 	TokenVersion int    `json:"token_version"`
 	jwt.RegisteredClaims
 }
+type AuthenticatedUser struct {
+	User UserResponse
+	Role entities.Role
+}
 
 // Entity -> Response
+func ToAuthenticatedUser(user entities.User, role entities.Role) AuthenticatedUser {
+	userResponse := ToUserResponse(user)
+	return AuthenticatedUser{
+		User: userResponse,
+		Role: role,
+	}
+}

@@ -8,9 +8,7 @@ import (
 	"github.com/asfung/elara/internal/container"
 	"github.com/asfung/elara/internal/handlers"
 	"github.com/asfung/elara/internal/oauth"
-	"github.com/asfung/elara/internal/repositories"
 	"github.com/asfung/elara/internal/services"
-	"github.com/asfung/elara/internal/services/impl"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
 )
@@ -43,13 +41,13 @@ func (s *echoServer) Start() {
 	c := container.NewContainer(s.db)
 
 	s.initializeHelloHttpHandler(api)
-	s.registerAuthRoutes(api, c.AuthHandler, &c.AuthService, AuthMiddleware(c.AuthService))
-	s.registerBankRoutes(api, c.BankHandler, AuthMiddleware(c.AuthService))
-	s.registerBankAccountRoutes(api, c.BankAccountHandler, AuthMiddleware(c.AuthService))
-	s.registerCardRoutes(api, c.CardHandler, AuthMiddleware(c.AuthService))
-	s.registerWalletRoutes(api, c.WalletHandler, AuthMiddleware(c.AuthService))
-	s.registerWalletTransactionRoutes(api, c.WalletTransactionHandler, AuthMiddleware(c.AuthService))
-	s.registerP2PTransferRoutes(api, c.P2PTransferHandler, AuthMiddleware(c.AuthService))
+	s.registerAuthRoutes(api, c.AuthHandler, &c.AuthService, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerBankRoutes(api, c.BankHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerBankAccountRoutes(api, c.BankAccountHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerCardRoutes(api, c.CardHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerWalletRoutes(api, c.WalletHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerWalletTransactionRoutes(api, c.WalletTransactionHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerP2PTransferRoutes(api, c.P2PTransferHandler, AuthMiddleware(c.AuthService, c.RoleService))
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Ok!"})
@@ -76,19 +74,21 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.A
 	oauthGroup.GET("/:provider", oauthHandler.BeginAuth)
 	oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
 
+	// new auth mechanism
+	authGroup.GET("/authorize/continue", authHandler.CheckEmail)
+	authGroup.POST("/user/register", authHandler.CreateAccount)
+	authGroup.POST("/email-otp/validate", authHandler.VerifyOTP)
+	authGroup.POST("/password/verify", authHandler.VerifyPassword)
 }
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
-	userRepo := repositories.NewUserPostgresRepository(s.db)
-	authRepo := repositories.NewAuthPostgresRepository(s.db)
-	userService := impl.NewUserServiceImpl(userRepo)
-	authService := impl.NewAuthServiceImpl(authRepo, userRepo, userService)
-	authHandler := handlers.NewAuthHandler(authService)
+	container := container.NewContainer(s.db)
+	authHandler := handlers.NewAuthHandler(container.AuthService, container.OtpService)
 
 	e.GET("/hello", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Hello!"})
 	})
-	e.GET("/authenticated", authHandler.Authenticated, AuthMiddleware(authService))
+	e.GET("/authenticated", authHandler.Authenticated, AuthMiddleware(container.AuthService, container.RoleService))
 }
 
 func (s *echoServer) registerBankRoutes(e *echo.Group, bankHandler *handlers.BankHandler, authMiddleware echo.MiddlewareFunc) {

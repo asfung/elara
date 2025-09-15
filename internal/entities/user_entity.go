@@ -10,25 +10,27 @@ import (
 )
 
 type User struct {
-	Id             uint32  `json:"id"`
-	Provider       string  `json:"provider"`
-	ProviderUserID string  `json:"provider_user_id" gorm:"index"`
-	Email          string  `json:"email" gorm:"uniqueIndex:idx_users_email" label:"email"`
-	Name           string  `json:"name"`
-	FirstName      *string `json:"firstName"`
-	LastName       *string `json:"lastName"`
-	Username       string  `json:"username" gorm:"uniqueIndex:idx_users_username" label:"username"`
-	Password       *string `json:"password"`
-	Description    *string `json:"description"`
-	// UserID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid()" json:"userId"`
+	Id                uint32    `json:"id"`
+	RoleID            uint      `json:"role_id"`
+	Provider          string    `json:"provider"`
+	ProviderUserID    string    `json:"provider_user_id" gorm:"index"`
+	Email             string    `json:"email" gorm:"uniqueIndex:idx_users_email" label:"email"`
+	EmailVerified     *bool     `gorm:"default:false" json:"email_verified"`
+	Name              string    `json:"name"`
+	FirstName         *string   `json:"first_name"`
+	LastName          *string   `json:"last_name"`
+	Username          string    `json:"username" gorm:"uniqueIndex:idx_users_username" label:"username"`
+	Password          *string   `json:"password"`
+	Description       *string   `json:"description"`
 	UserID            uuid.UUID `gorm:"type:uuid" json:"userId"`
-	AvatarURL         *string   `json:"avatarUrl"`
+	AvatarURL         *string   `json:"avatar_url"`
 	Location          *string   `json:"location"`
-	AccessToken       *string   `json:"accessToken"`
-	AccessTokenSecret *string   `json:"accessTokenSecret"`
-	RefreshToken      *string   `json:"refreshToken"`
+	AccessToken       *string   `json:"access_token"`
+	AccessTokenSecret *string   `json:"access_token_secret"`
+	RefreshToken      *string   `json:"refresh_token"`
 	TokenVersion      int       `gorm:"default:1"`
 	IDToken           *string   `json:"idToken"`
+	Subscription      *string   `gorm:"type:varchar(50)" json:"subscription"` // ree, pro, enterprise
 	TimeStamp
 }
 

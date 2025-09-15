@@ -18,17 +18,23 @@ type authServiceImpl struct {
 	authRepo    repositories.AuthRepository
 	userRepo    repositories.UserRepository
 	userService services.UserService
+	otpService  services.OTPService
+	smtpService services.SmtpService
 }
 
 func NewAuthServiceImpl(
 	authRepo repositories.AuthRepository,
 	userRepo repositories.UserRepository,
 	userSvc services.UserService,
+	otpService services.OTPService,
+	smtpService services.SmtpService,
 ) services.AuthService {
 	return &authServiceImpl{
 		authRepo:    authRepo,
 		userService: userSvc,
 		userRepo:    userRepo,
+		otpService:  otpService,
+		smtpService: smtpService,
 	}
 }
 
@@ -219,4 +225,87 @@ func (a *authServiceImpl) GetUserByEmail(email string) (entities.User, error) {
 	}
 
 	return user, nil
+}
+
+func (a *authServiceImpl) CreateAccountWithPassword(email, password string) (entities.User, error) {
+	hashed, err := utils.HashPassword(password)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	emailPrefix, err := utils.GetEmailPrefix(email)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	user := entities.User{
+		Email:    email,
+		Password: &hashed,
+		Name:     utils.GenerateUsername(emailPrefix),
+		// Description: utils.StringPtr("pending_verification"),
+	}
+
+	accountCreated, err := a.userRepo.Create(user)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	otp, err := utils.GenerateOTP(6)
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	otpCreated, err := a.otpService.CreateOTP(models.AddOTPRequest{UserID: accountCreated.UserID.String(), Code: otp, ExpiresAt: 15 * time.Minute})
+	if err != nil {
+		return entities.User{}, err
+	}
+
+	toEmail := accountCreated.Email
+	data := map[string]interface{}{
+		"Name": accountCreated.Name,
+		"OTP":  otpCreated.Code,
+	}
+	err = a.smtpService.SendEmail(toEmail, "Elara Code Verification", data)
+	if err != nil {
+		log.Error("AuthServiceImpl.CreateAccountWithPassword Error", err)
+	} else {
+		log.Info("send email successfully")
+	}
+
+	return accountCreated, nil
+}
+
+func (a *authServiceImpl) VerifyPassword(email, password string) (bool, error) {
+	user, err := a.userRepo.FindByEmail(email)
+	if err != nil {
+		return false, err
+	}
+
+	if user.Password == nil || !utils.VerifyPassword(password, *user.Password) {
+		return false, errors.New("invalid email or password")
+	}
+
+	otp, err := utils.GenerateOTP(6)
+	if err != nil {
+		return false, err
+	}
+
+	otpCreated, err := a.otpService.CreateOTP(models.AddOTPRequest{UserID: user.UserID.String(), Code: otp, ExpiresAt: 15 * time.Minute})
+	if err != nil {
+		return false, err
+	}
+
+	toEmail := user.Email
+	data := map[string]interface{}{
+		"Name": user.Name,
+		"OTP":  otpCreated.Code,
+	}
+	err = a.smtpService.SendEmail(toEmail, "Elara Code Verification", data)
+	if err != nil {
+		log.Error("AuthServiceImpl.CreateAccountWithPassword Error", err)
+	} else {
+		log.Info("send email successfully")
+	}
+
+	return true, nil
 }
