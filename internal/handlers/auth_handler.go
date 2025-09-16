@@ -17,12 +17,14 @@ import (
 type AuthHandler struct {
 	*Handler
 	authService services.AuthService
+	userService services.UserService
 	otpService  services.OTPService
 }
 
-func NewAuthHandler(authService services.AuthService, otpService services.OTPService) *AuthHandler {
+func NewAuthHandler(authService services.AuthService, userService services.UserService, otpService services.OTPService) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
+		userService: userService,
 		otpService:  otpService,
 	}
 }
@@ -154,12 +156,16 @@ func (h *AuthHandler) Authenticated(c echo.Context) error {
 	return c.JSON(http.StatusOK, models.ToUserResponse(*user))
 }
 
+// ============================================================
+// ========================= NEW AUTH =========================
+// ============================================================
+
 func (h *AuthHandler) CheckEmail(c echo.Context) error {
 	type request struct {
 		Email string `json:"email" validate:"required,email"`
 	}
 
-	var req request
+	req := new(request)
 	if err := h.BindBodyRequest(c, req); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
@@ -174,6 +180,7 @@ func (h *AuthHandler) CheckEmail(c echo.Context) error {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			res := map[string]interface{}{
 				"continue_url": os.Getenv("CLIENT_URL") + "/create-account/password",
+				"email":        req.Email,
 			}
 			return c.JSON(http.StatusOK, res)
 		}
@@ -182,6 +189,7 @@ func (h *AuthHandler) CheckEmail(c echo.Context) error {
 	if user.UserID != uuid.Nil {
 		res := map[string]interface{}{
 			"continue_url": os.Getenv("CLIENT_URL") + "/log-in/password",
+			"email":        req.Email,
 		}
 		return c.JSON(http.StatusOK, res)
 	}
@@ -195,7 +203,7 @@ func (h *AuthHandler) CreateAccount(c echo.Context) error {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8"`
 	}
-	var req request
+	req := new(request)
 	if err := h.BindBodyRequest(c, req); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
@@ -205,17 +213,26 @@ func (h *AuthHandler) CreateAccount(c echo.Context) error {
 		return models.SendFailedValidationResponse(c, validateErrors)
 	}
 
+	userExist, _ := h.authService.GetUserByEmail(req.Email)
+	if userExist.UserID != uuid.Nil {
+		res := map[string]interface{}{
+			"continue_url": os.Getenv("CLIENT_URL") + "/log-in/password",
+		}
+		return c.JSON(http.StatusOK, res)
+	}
+
 	user, err := h.authService.CreateAccountWithPassword(req.Email, req.Password)
 	if err != nil {
 		return models.SendInternalServerErrorResponse(c, err.Error())
 	}
 
 	data := map[string]interface{}{
-		"user_id": user.UserID,
+		"continue_url": os.Getenv("CLIENT_URL") + "/email-verification",
+		"user_id":      user.UserID,
 	}
 	// make it redirect to the http://localhost:6060/email-verification
-	location := os.Getenv("CLIENT_URL") + "/email-verification"
-	c.Redirect(http.StatusFound, location)
+	// location := os.Getenv("CLIENT_URL") + "/email-verification"
+	// c.Redirect(http.StatusFound, location)
 
 	return models.SendResponse(c, true, "acccount created, please verify OTP", data, http.StatusCreated)
 }
@@ -225,7 +242,7 @@ func (h *AuthHandler) VerifyPassword(c echo.Context) error {
 		Email    string `json:"email" validate:"required,email"`
 		Password string `json:"password" validate:"required,min=8"`
 	}
-	var req request
+	req := new(request)
 	if err := h.BindBodyRequest(c, req); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
@@ -241,8 +258,10 @@ func (h *AuthHandler) VerifyPassword(c echo.Context) error {
 	}
 
 	if isValid {
+		user, _ := h.authService.GetUserByEmail(req.Email)
 		res := map[string]interface{}{
 			"continue_url": os.Getenv("CLIENT_URL") + "/email-verification",
+			"user_id":      user.UserID.String(),
 		}
 		return c.JSON(http.StatusOK, res)
 	}
@@ -252,10 +271,10 @@ func (h *AuthHandler) VerifyPassword(c echo.Context) error {
 
 func (h *AuthHandler) VerifyOTP(c echo.Context) error {
 	type request struct {
-		UserID string `json:"userId" validate:"required"`
+		UserID string `json:"user_id" validate:"required"`
 		OTP    string `json:"otp" validate:"required"`
 	}
-	var req request
+	req := new(request)
 	if err := h.BindBodyRequest(c, req); err != nil {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
@@ -272,7 +291,29 @@ func (h *AuthHandler) VerifyOTP(c echo.Context) error {
 
 	// make a response isValid
 	if isValid {
-		return models.SendSuccessResponse(c, "account verified, you can log in now", nil)
+		user, _ := h.userService.GetUserByUserId(req.UserID)
+		accessToken, refreshToken, err := h.authService.CreateTokensForUser(user)
+		if err != nil {
+			return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
+		}
+		cookie := &http.Cookie{
+			Name:     "refresh_token",
+			Value:    refreshToken,
+			HttpOnly: true,
+			// Secure:   true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/api/v1/auth/refresh",
+			Expires:  time.Now().Add(30 * 24 * time.Hour), // 30 days
+		}
+		c.SetCookie(cookie)
+
+		data := models.AuthResponse{
+			AccessToken:          accessToken,
+			AccessTokenFormatted: "Bearer " + accessToken,
+			ExpiresAt:            (24 * time.Hour * 7),
+		}
+		return models.SendSuccessResponse(c, "account verified, you can log in now", data)
 	}
 
 	return models.SendErrorResponse(c, "account not verified", http.StatusUnauthorized)

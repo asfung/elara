@@ -2,6 +2,8 @@ package repositories
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
 
 	"github.com/asfung/elara/database"
 	"gorm.io/gorm"
@@ -34,7 +36,11 @@ func (r *BaseRepository[T]) FindById(id any) (*T, error) {
 	// if err := r.db.GetDb().First(&entity, id).Error; err != nil {
 	if err := r.db.GetDb().First(&entity, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("record not found")
+			typeName := reflect.TypeOf(entity).Name()
+			if typeName == "" {
+				typeName = "record"
+			}
+			return nil, fmt.Errorf("%s not found", typeName)
 		}
 		return nil, err
 	}

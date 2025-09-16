@@ -75,7 +75,7 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.A
 	oauthGroup.GET("/:provider/callback", oauthHandler.Callback)
 
 	// new auth mechanism
-	authGroup.GET("/authorize/continue", authHandler.CheckEmail)
+	authGroup.POST("/authorize/continue", authHandler.CheckEmail)
 	authGroup.POST("/user/register", authHandler.CreateAccount)
 	authGroup.POST("/email-otp/validate", authHandler.VerifyOTP)
 	authGroup.POST("/password/verify", authHandler.VerifyPassword)
@@ -83,7 +83,7 @@ func (s *echoServer) registerAuthRoutes(api *echo.Group, authHandler *handlers.A
 
 func (s *echoServer) initializeHelloHttpHandler(e *echo.Group) {
 	container := container.NewContainer(s.db)
-	authHandler := handlers.NewAuthHandler(container.AuthService, container.OtpService)
+	authHandler := handlers.NewAuthHandler(container.AuthService, container.UserService, container.OtpService)
 
 	e.GET("/hello", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Hello!"})

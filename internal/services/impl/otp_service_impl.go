@@ -1,6 +1,7 @@
 package impl
 
 import (
+	"errors"
 	"time"
 
 	"github.com/asfung/elara/internal/entities"
@@ -8,6 +9,7 @@ import (
 	"github.com/asfung/elara/internal/repositories"
 	"github.com/asfung/elara/internal/services"
 	"github.com/asfung/elara/utils"
+	"gorm.io/gorm"
 )
 
 type otpServiceImpl struct {
@@ -24,10 +26,10 @@ func NewOTPServiceImpl(otpRepo repositories.OTPRepository, userRepo repositories
 
 func (o *otpServiceImpl) CreateOTP(req models.AddOTPRequest) (entities.OTP, error) {
 	otpExist, err := o.otpRepo.FindByUserId(req.UserID)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// Only return error if it's not "not found"
 		return entities.OTP{}, err
 	}
-
 	if otpExist.Code != "" {
 		// if the otp code exist and not expired it just add the extras expires
 		otpExist.ExpiresAt = time.Now().Add(15 * time.Minute)

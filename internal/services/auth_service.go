@@ -16,4 +16,5 @@ type AuthService interface {
 	GetUserByEmail(email string) (entities.User, error)
 	CreateAccountWithPassword(email, password string) (entities.User, error)
 	VerifyPassword(email, password string) (bool, error)
+	CreateTokensForUser(u entities.User) (string, string, error)
 }

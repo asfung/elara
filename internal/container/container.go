@@ -2,6 +2,7 @@ package container
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/asfung/elara/database"
 	"github.com/asfung/elara/internal/handlers"
@@ -10,18 +11,9 @@ import (
 	"github.com/asfung/elara/internal/services/impl"
 )
 
-var (
-	SMTP_FROM     = os.Getenv("SMTP_FROM")
-	SMTP_PASSWORD = os.Getenv("SMTP_PASSWORD")
-	SMTP_HOST     = os.Getenv("SMTP_HOST")
-	SMTP_PORT     = os.Getenv("SMTP_PORT")
-
-	// SMTP
-	TemplateHTML = "../../templates/email.html"
-)
-
 type Container struct {
 	AuthService services.AuthService
+	UserService services.UserService
 	RoleService services.RoleService
 	SmtpService services.SmtpService
 	OtpService  services.OTPService
@@ -36,6 +28,13 @@ type Container struct {
 }
 
 func NewContainer(db database.Database) *Container {
+	SMTP_FROM := os.Getenv("SMTP_FROM")
+	SMTP_PASSWORD := os.Getenv("SMTP_PASSWORD")
+	SMTP_HOST := os.Getenv("SMTP_HOST")
+	SMTP_PORT := os.Getenv("SMTP_PORT")
+	cwd, _ := os.Getwd()
+	TemplateHTML := filepath.Join(cwd, "templates", "email.html")
+
 	// REPOSITORIES
 	userRepo := repositories.NewUserPostgresRepository(db)
 	roleRepo := repositories.NewRolePostgresRepository(db)
@@ -62,7 +61,7 @@ func NewContainer(db database.Database) *Container {
 	p2pTransferService := impl.NewP2PTransferServiceImpl(p2pTransferRepo, walletTransactionRepo, walletService, userService)
 
 	// HANDLERS
-	authHandler := handlers.NewAuthHandler(authService, otpService)
+	authHandler := handlers.NewAuthHandler(authService, userService, otpService)
 	bankHandler := handlers.NewBankHandler(bankService)
 	bankAccountHandler := handlers.NewBankAccountHandler(bankAccountService)
 	cardHandler := handlers.NewCardHandler(cardService)
@@ -75,6 +74,7 @@ func NewContainer(db database.Database) *Container {
 		RoleService: roleService,
 		SmtpService: smtpService,
 		OtpService:  otpService,
+		UserService: userService,
 
 		AuthHandler:              authHandler,
 		BankHandler:              bankHandler,

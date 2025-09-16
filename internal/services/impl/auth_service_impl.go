@@ -184,7 +184,7 @@ func (a *authServiceImpl) OAuthLoginFromGothUser(gUser goth.User) (string, strin
 		}
 	}
 
-	accessToken, refreshToken, err := a.createTokensForUser(u)
+	accessToken, refreshToken, err := a.CreateTokensForUser(u)
 	if err != nil {
 		return "", "", err
 	}
@@ -192,7 +192,7 @@ func (a *authServiceImpl) OAuthLoginFromGothUser(gUser goth.User) (string, strin
 	return accessToken, refreshToken, nil
 }
 
-func (a *authServiceImpl) createTokensForUser(u entities.User) (string, string, error) {
+func (a *authServiceImpl) CreateTokensForUser(u entities.User) (string, string, error) {
 	user, err := a.userRepo.FindByEmail(u.Email)
 	if err != nil {
 		return "", "", err
@@ -238,10 +238,12 @@ func (a *authServiceImpl) CreateAccountWithPassword(email, password string) (ent
 		return entities.User{}, err
 	}
 
+	nameAndUsernameGen := utils.GenerateUsername(emailPrefix)
 	user := entities.User{
 		Email:    email,
 		Password: &hashed,
-		Name:     utils.GenerateUsername(emailPrefix),
+		Name:     nameAndUsernameGen,
+		Username: nameAndUsernameGen,
 		// Description: utils.StringPtr("pending_verification"),
 	}
 

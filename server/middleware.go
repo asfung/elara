@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -18,6 +19,14 @@ func BaseMiddleware(e *echo.Echo) {
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(middleware.Recover())
 	e.Use(RequestLoggerMiddleware)
+
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{os.Getenv("CLIENT_URL")},
+		AllowMethods: []string{echo.GET, echo.POST, echo.PUT, echo.DELETE, echo.OPTIONS},
+		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAuthorization},
+		// ExposeHeaders:    []string{"Set-Cookie"},
+		AllowCredentials: true,
+	}))
 }
 
 func AuthMiddleware(authService services.AuthService, roleService services.RoleService) echo.MiddlewareFunc {
@@ -35,6 +44,7 @@ func AuthMiddleware(authService services.AuthService, roleService services.RoleS
 			for _, r := range registeredRoutes {
 				if r.Method == c.Request().Method && r.Path == c.Path() {
 					if r.Name == "auth.refresh.token" {
+						log.Info("refresh token api hittt=============================")
 						return next(c)
 					}
 					break

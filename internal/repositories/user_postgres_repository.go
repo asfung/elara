@@ -21,9 +21,9 @@ func NewUserPostgresRepository(db database.Database) UserRepository {
 func (r *userPostgresRepository) FindByEmail(email string) (entities.User, error) {
 	var user entities.User
 	if err := r.db.GetDb().Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return entities.User{}, errors.New("user not found")
-		}
+		// if errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	return entities.User{}, errors.New("user not found")
+		// }
 		return entities.User{}, err
 	}
 	return user, nil

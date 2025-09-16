@@ -4,21 +4,8 @@ import (
 	"bytes"
 	"html/template"
 	"net/smtp"
-	"os"
 
 	"github.com/asfung/elara/internal/services"
-)
-
-var (
-	SMTP_FROM     = os.Getenv("SMTP_FROM")
-	SMTP_PASSWORD = os.Getenv("SMTP_PASSWORD")
-	SMTP_HOST     = os.Getenv("SMTP_HOST")
-	SMTP_PORT     = os.Getenv("SMTP_PORT")
-
-	// SMTP_FROM="paungcuy15@gmail.com"
-	// SMTP_PASSWORD=vtrsrtkahhcxsyck
-	// SMTP_HOST="smtp.gmail.com"
-	// SMTP_PORT="587"
 )
 
 type smtpServiceImpl struct {
@@ -51,7 +38,8 @@ func (s *smtpServiceImpl) SendEmail(to string, subject string, data interface{})
 	}
 
 	msg := []byte(
-		"To: " + to + "\r\n" +
+		"From: " + s.Username + "\r\n" +
+			"To: " + to + "\r\n" +
 			"Subject: " + subject + "\r\n" +
 			"MIME-Version: 1.0\r\n" +
 			"Content-Type: text/html; charset=\"utf-8\"\r\n" +
@@ -60,11 +48,13 @@ func (s *smtpServiceImpl) SendEmail(to string, subject string, data interface{})
 	)
 
 	auth := smtp.PlainAuth("", s.Username, s.Password, s.Host)
-
 	addr := s.Host + ":" + s.Port
-	if err := smtp.SendMail(addr, auth, SMTP_FROM, []string{to}, msg); err != nil {
+
+	// log.Infof("SMTP Config -> host=%s port=%s user=%s", s.Host, s.Port, s.Username)
+	// log.Infof("sending email to %s via %s", to, addr)
+
+	if err := smtp.SendMail(addr, auth, s.Username, []string{to}, msg); err != nil {
 		return err
 	}
-
 	return nil
 }
