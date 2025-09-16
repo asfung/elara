@@ -24,12 +24,12 @@ type RefreshTokenRequest struct {
 
 // Response DTOs
 type UserResponse struct {
-	UserId    uuid.UUID
-	AvatarUrl *string
-	Username  string
-	Email     string
-	FirstName *string
-	LastName  *string
+	UserId    uuid.UUID `json:"user_id"`
+	AvatarUrl *string   `json:"avatar_url"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	FirstName *string   `json:"first_name"`
+	LastName  *string   `json:"last_name"`
 }
 
 // Entity -> Response
