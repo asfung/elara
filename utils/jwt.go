@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/sha256"
 	"errors"
 	"time"
 
@@ -8,13 +9,20 @@ import (
 	"github.com/asfung/elara/internal/entities"
 	"github.com/asfung/elara/internal/models"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/lestrrat-go/jwx/v2/jwa"
+	"github.com/lestrrat-go/jwx/v2/jwe"
 )
 
 // type User = entities.User
 // type Claims = entities.Claims
 
-// var jwtSecret = []byte("53cr3t_k3y")
-var jwtSecret = []byte(config.GetConfig().Jwt.Secret)
+// var jwtSecret = []byte(config.GetConfig().Jwt.Secret)
+var jwtSecret = getKey(config.GetConfig().Jwt.Secret)
+
+func getKey(secret string) []byte {
+	h := sha256.Sum256([]byte(secret))
+	return h[:] // 32-byte key
+}
 
 func CreateToken(user *entities.User, duration time.Duration) (string, error) {
 	claims := models.Claims{
@@ -28,47 +36,59 @@ func CreateToken(user *entities.User, duration time.Duration) (string, error) {
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtSecret)
-}
-
-// ValidateToken performs an outdated operation.
-//
-// Deprecated: ValidateToken() is deprecated and should not be used.
-// Use VerifyToken(token) instead for improved functionality.
-func ValidateToken(tokenStr string) (*models.Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &models.Claims{}, func(token *jwt.Token) (any, error) {
-		return jwtSecret, nil
-	})
+	signedToken, err := token.SignedString(jwtSecret)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	claims, ok := token.Claims.(*models.Claims)
-	if !ok || !token.Valid {
-		return nil, errors.New("invalid token")
+
+	encryptSignToken, err := EncryptedJWToken(signedToken)
+	if err != nil {
+		return "", err
 	}
-	return claims, nil
+	return encryptSignToken, nil
 }
 
-func RefreshToken(refreshToken string, user *entities.User) (string, error) {
-	// check if refreshToken matches user's stored refresh token from table User
-
-	if refreshToken != *user.RefreshToken {
-		return "", errors.New("invalid refresh token")
+func EncryptedJWToken(signedToken string) (string, error) {
+	encrypted, err := jwe.Encrypt([]byte(signedToken), jwe.WithKey(jwa.DIRECT, jwtSecret))
+	if err != nil {
+		return "", err
 	}
-
-	return CreateToken(user, 24*time.Hour)
+	return string(encrypted), nil
 }
 
 func VerifyToken(token string) (*models.Claims, error) {
 	tokenObj, err := jwt.ParseWithClaims(token, &models.Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return jwtSecret, nil
 	})
+	if err == nil && tokenObj.Valid {
+		if claims, ok := tokenObj.Claims.(*models.Claims); ok {
+			return claims, nil
+		}
+	}
+
+	// an old claims
+	// claims, ok := tokenObj.Claims.(*models.Claims)
+	// if !ok || !tokenObj.Valid {
+	// 	return nil, errors.New("invalid token")
+	// }
+	// return claims, nil
+
+	decrypted, err := jwe.Decrypt([]byte(token), jwe.WithKey(jwa.DIRECT, jwtSecret))
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to decrypt the token ")
 	}
+
+	tokenObj, err = jwt.ParseWithClaims(string(decrypted), &models.Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	if err != nil || !tokenObj.Valid {
+		return nil, errors.New("invalid token after decryption")
+	}
+
 	claims, ok := tokenObj.Claims.(*models.Claims)
-	if !ok || !tokenObj.Valid {
-		return nil, errors.New("invalid token")
+	if !ok {
+		return nil, errors.New("invalid token claims")
 	}
+
 	return claims, nil
 }

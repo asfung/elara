@@ -102,16 +102,30 @@ func (h *AuthHandler) RefreshToken(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 	}
 
-	newCookie := &http.Cookie{
+	newRefreshCookie := &http.Cookie{
 		Name:     "refresh_token",
 		Value:    authResp.RefreshToken,
 		HttpOnly: true,
-		Secure:   true,
+		// Secure:   true,
+		Secure:   false,
 		SameSite: http.SameSiteStrictMode,
-		Path:     "/api/v1/auth/refresh",
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
+		// Path:     "/api/v1/auth/refresh",
+		Path:    "/",
+		Expires: time.Now().Add(30 * 24 * time.Hour),
 	}
-	c.SetCookie(newCookie)
+	c.SetCookie(newRefreshCookie)
+
+	newAccessCookie := &http.Cookie{
+		Name:     "access_token",
+		Value:    authResp.RefreshToken,
+		HttpOnly: true,
+		// Secure:   true,
+		Secure:   false,
+		SameSite: http.SameSiteStrictMode,
+		Path:     "/",
+		Expires:  time.Now().Add(15 * time.Minute), // 15 minutes
+	}
+	c.SetCookie(newAccessCookie)
 
 	return c.JSON(http.StatusOK, models.AuthResponse{
 		AccessToken:          authResp.AccessToken,
@@ -296,17 +310,30 @@ func (h *AuthHandler) VerifyOTP(c echo.Context) error {
 		if err != nil {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": err.Error()})
 		}
-		cookie := &http.Cookie{
+		refreshCookie := &http.Cookie{
 			Name:     "refresh_token",
 			Value:    refreshToken,
 			HttpOnly: true,
 			// Secure:   true,
 			Secure:   false,
 			SameSite: http.SameSiteStrictMode,
-			Path:     "/api/v1/auth/refresh",
-			Expires:  time.Now().Add(30 * 24 * time.Hour), // 30 days
+			// Path:     "/api/v1/auth/refresh",
+			Path:    "/",
+			Expires: time.Now().Add(30 * 24 * time.Hour), // 30 days
 		}
-		c.SetCookie(cookie)
+		c.SetCookie(refreshCookie)
+
+		accessCookie := &http.Cookie{
+			Name:     "access_token",
+			Value:    accessToken,
+			HttpOnly: true,
+			// Secure:   true,
+			Secure:   false,
+			SameSite: http.SameSiteStrictMode,
+			Path:     "/",
+			Expires:  time.Now().Add(15 * time.Minute), // 15 minutes
+		}
+		c.SetCookie(accessCookie)
 
 		data := models.AuthResponse{
 			AccessToken:          accessToken,

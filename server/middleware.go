@@ -51,12 +51,26 @@ func AuthMiddleware(authService services.AuthService, roleService services.RoleS
 				}
 			}
 
+			var token string
+
 			authHeader := c.Request().Header.Get("Authorization")
-			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-				return echo.NewHTTPError(http.StatusUnauthorized, "Missing or invalid token")
+			if authHeader != "" && strings.HasPrefix(authHeader, "Bearer ") {
+				token = strings.TrimPrefix(authHeader, "Bearer ")
 			}
 
-			token := strings.TrimPrefix(authHeader, "Bearer ")
+			if token == "" {
+				cookie, err := c.Cookie("access_token")
+				if err == nil {
+					token = cookie.Value
+				} else {
+					data := map[string]interface{}{"key": "cookie.null"}
+					return echo.NewHTTPError(http.StatusUnauthorized, data)
+				}
+			}
+
+			if token == "" {
+				return echo.NewHTTPError(http.StatusUnauthorized, "Missing or invalid token")
+			}
 
 			user, err := authService.Verify(token)
 			if err != nil {
