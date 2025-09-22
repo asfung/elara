@@ -164,6 +164,7 @@ func (a *authServiceImpl) OAuthLoginFromGothUser(gUser goth.User) (string, strin
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			newUser := entities.User{
+				RoleID:         2,
 				Provider:       gUser.Provider,
 				ProviderUserID: gUser.UserID, // its actually UserID from provider
 				Email:          gUser.Email,
@@ -240,6 +241,8 @@ func (a *authServiceImpl) CreateAccountWithPassword(email, password string) (ent
 
 	nameAndUsernameGen := utils.GenerateUsername(emailPrefix)
 	user := entities.User{
+		RoleID:   2,
+		Provider: "local",
 		Email:    email,
 		Password: &hashed,
 		Name:     nameAndUsernameGen,
