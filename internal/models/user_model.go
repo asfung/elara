@@ -24,22 +24,26 @@ type RefreshTokenRequest struct {
 
 // Response DTOs
 type UserResponse struct {
-	UserId    uuid.UUID `json:"user_id"`
-	AvatarUrl *string   `json:"avatar_url"`
-	Username  string    `json:"username"`
-	Email     string    `json:"email"`
-	FirstName *string   `json:"first_name"`
-	LastName  *string   `json:"last_name"`
+	UserId       uuid.UUID `json:"user_id"`
+	AvatarUrl    *string   `json:"avatar_url"`
+	Username     string    `json:"username"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	FirstName    *string   `json:"first_name"`
+	LastName     *string   `json:"last_name"`
+	Subscription *string   `json:"subscription"`
 }
 
 // Entity -> Response
 func ToUserResponse(user entities.User) UserResponse {
 	return UserResponse{
-		UserId:    user.UserID,
-		AvatarUrl: user.AvatarURL,
-		Username:  user.Username,
-		Email:     user.Email,
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
+		UserId:       user.UserID,
+		AvatarUrl:    user.AvatarURL,
+		Username:     user.Username,
+		Name:         user.Name,
+		Email:        user.Email,
+		FirstName:    user.FirstName,
+		LastName:     user.LastName,
+		Subscription: user.Subscription,
 	}
 }
