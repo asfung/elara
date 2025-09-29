@@ -150,17 +150,29 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 		return models.SendUnauthorizedResponse(c, err.Error())
 	}
 
-	expiredCookie := &http.Cookie{
+	accessTokenCookie := &http.Cookie{
 		Name:     "refresh_token",
 		Value:    "",
-		Path:     "/api/v1/auth/refresh",
+		Path:     "/",
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 		Expires:  time.Unix(0, 0), // expired date
 		MaxAge:   -1,
 	}
-	c.SetCookie(expiredCookie)
+	c.SetCookie(accessTokenCookie)
+
+	refreshTokenCookies := &http.Cookie{
+		Name:     "access_token",
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+		Expires:  time.Unix(0, 0), // expired date
+		MaxAge:   -1,
+	}
+	c.SetCookie(refreshTokenCookies)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "logout successful"})
 }
