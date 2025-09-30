@@ -23,9 +23,9 @@ func (h *WalletHandler) CreateWallet(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErors := h.ValidateBodyRequest(payload)
-	if validationErors != nil {
-		return models.SendFailedValidationResponse(c, validationErors)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	wallet, err := h.walletService.CreateWallet(*payload)
@@ -41,9 +41,9 @@ func (h *WalletHandler) UpdateWallet(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErors := h.ValidateBodyRequest(payload)
-	if validationErors != nil {
-		return models.SendFailedValidationResponse(c, validationErors)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	wallet, err := h.walletService.UpdateWallet(*payload)
@@ -91,9 +91,9 @@ func (h *WalletHandler) UpdateWalletBalance(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErors := h.ValidateBodyRequest(payload)
-	if validationErors != nil {
-		return models.SendFailedValidationResponse(c, validationErors)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	_, err := h.walletService.UpdateWalletBalance(id, payload.Balance, isCredit)

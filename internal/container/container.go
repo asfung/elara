@@ -25,6 +25,9 @@ type Container struct {
 	WalletHandler            *handlers.WalletHandler
 	WalletTransactionHandler *handlers.WalletTransactionHandler
 	P2PTransferHandler       *handlers.P2PTransferHandler
+	Assetandler              *handlers.AssetHandler
+	PortfolioHandler         *handlers.PortfolioHandler
+	PortfolioAssetHandler    *handlers.PortfolioAssetHandler
 }
 
 func NewContainer(db database.Database) *Container {
@@ -46,6 +49,9 @@ func NewContainer(db database.Database) *Container {
 	walletTransactionRepo := repositories.NewWalletTransactionPostgresRepository(db)
 	p2pTransferRepo := repositories.NewP2PTransferPostgresRepository(db)
 	otpRepo := repositories.NewOTPPotgresRepository(db)
+	assetRepo := repositories.NewAssetPostgresRepository(db)
+	portfolioRepo := repositories.NewPortfolioPostgresRepository(db)
+	portfolioAssetRepo := repositories.NewPortfolioAssetPostgresRepository(db)
 
 	// SERVICES
 	otpService := impl.NewOTPServiceImpl(otpRepo, userRepo)
@@ -59,6 +65,9 @@ func NewContainer(db database.Database) *Container {
 	walletService := impl.NewWalletServiceImpl(walletRepo, userService)
 	walletTransactionService := impl.NewWalletTransactionServiceImpl(walletTransactionRepo, walletService)
 	p2pTransferService := impl.NewP2PTransferServiceImpl(p2pTransferRepo, walletTransactionRepo, walletService, userService)
+	assetService := impl.NewAssetServiceImpl(assetRepo)
+	portfolioService := impl.NewPortfolioServiceImpl(portfolioRepo)
+	portfolioAssetService := impl.NewPortfolioAssetServiceImpl(portfolioAssetRepo)
 
 	// HANDLERS
 	authHandler := handlers.NewAuthHandler(authService, userService, otpService)
@@ -68,6 +77,9 @@ func NewContainer(db database.Database) *Container {
 	walletHandler := handlers.NewWalletHandler(walletService)
 	walletTransactionHandler := handlers.NewWalletTransactionHandler(walletTransactionService)
 	p2pTransferHandler := handlers.NewP2PTransferHandler(p2pTransferService)
+	assetHandler := handlers.NewAssetHandler(assetService)
+	portfolioHandler := handlers.NewPortfolioHandler(portfolioService)
+	portfolioAssetHandler := handlers.NewPortfolioAssetHandler(portfolioAssetService)
 
 	return &Container{
 		AuthService: authService,
@@ -83,5 +95,8 @@ func NewContainer(db database.Database) *Container {
 		WalletHandler:            walletHandler,
 		WalletTransactionHandler: walletTransactionHandler,
 		P2PTransferHandler:       p2pTransferHandler,
+		Assetandler:              assetHandler,
+		PortfolioHandler:         portfolioHandler,
+		PortfolioAssetHandler:    portfolioAssetHandler,
 	}
 }

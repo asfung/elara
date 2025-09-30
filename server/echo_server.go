@@ -48,6 +48,8 @@ func (s *echoServer) Start() {
 	s.registerWalletRoutes(api, c.WalletHandler, AuthMiddleware(c.AuthService, c.RoleService))
 	s.registerWalletTransactionRoutes(api, c.WalletTransactionHandler, AuthMiddleware(c.AuthService, c.RoleService))
 	s.registerP2PTransferRoutes(api, c.P2PTransferHandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerAssetRoutes(api, c.Assetandler, AuthMiddleware(c.AuthService, c.RoleService))
+	s.registerPortfolioRoutes(api, c.PortfolioHandler, c.PortfolioAssetHandler, AuthMiddleware(c.AuthService, c.RoleService))
 
 	api.GET("/health", func(c echo.Context) error {
 		return c.JSON(200, map[string]interface{}{"message": "Ok!"})
@@ -143,3 +145,35 @@ func (s *echoServer) registerP2PTransferRoutes(e *echo.Group, p2pTransferHandler
 	p2pTransferGroup.GET("/:id", p2pTransferHandler.GetP2PTransferById)
 	p2pTransferGroup.DELETE("/:id", p2pTransferHandler.DeleteP2PTransfer)
 }
+
+func (s *echoServer) registerAssetRoutes(e *echo.Group, assetHandler *handlers.AssetHandler, authMiddleware echo.MiddlewareFunc) {
+	assetGroup := e.Group("/asset", authMiddleware)
+	assetGroup.GET("", assetHandler.CreateAsset)
+	assetGroup.PUT("/:id", assetHandler.UpdateAsset)
+	assetGroup.GET("/:id", assetHandler.GetAssetById)
+	assetGroup.DELETE("", assetHandler.DeleteAsset)
+}
+
+func (s *echoServer) registerPortfolioRoutes(e *echo.Group, portfolioHandler *handlers.PortfolioHandler, portfolioAssetHandler *handlers.PortfolioAssetHandler, authMiddleware echo.MiddlewareFunc) {
+	portfolioGroup := e.Group("/portfolio", authMiddleware)
+	portfolioGroup.GET("", portfolioHandler.CreatePortfolio)
+	portfolioGroup.PUT("/:id", portfolioHandler.UpdatePortfolio)
+	portfolioGroup.GET("/:id", portfolioHandler.GetPortfolioById)
+	portfolioGroup.DELETE("", portfolioHandler.DeletePortfolio)
+
+	// portfolio asset
+	portfolioAssetGroup := portfolioGroup.Group("/asset")
+	portfolioAssetGroup.GET("", portfolioAssetHandler.CreatePortfolioAsset)
+	portfolioAssetGroup.PUT("/:id", portfolioAssetHandler.UpdatePortfolioAsset)
+	portfolioAssetGroup.GET("/:id", portfolioAssetHandler.GetPortfolioAssetById)
+	portfolioAssetGroup.DELETE("", portfolioAssetHandler.DeletePortfolioAsset)
+
+}
+
+// func (s *echoServer) registerPortfolioAssetRoutes(e *echo.Group, portfolioAssetHandler *handlers.PortfolioAssetHandler, authMiddleware echo.MiddlewareFunc) {
+// 	portfolioAssetGroup := e.Group("/portfolio-asset", authMiddleware)
+// 	portfolioGroup.GET("", portfolioHandler.CreatePortfolio)
+// 	portfolioGroup.PUT("/:id", portfolioHandler.UpdatePortfolio)
+// 	portfolioGroup.GET("/:id", portfolioHandler.GetPortfolioById)
+// 	portfolioGroup.DELETE("", portfolioHandler.DeletePortfolio)
+// }

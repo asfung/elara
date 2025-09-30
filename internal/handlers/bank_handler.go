@@ -44,9 +44,9 @@ func (h *BankHandler) UpdateBank(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErros := h.ValidateBodyRequest(payload)
-	if validationErros != nil {
-		return models.SendFailedValidationResponse(c, validationErros)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 	payload.ID = id
 

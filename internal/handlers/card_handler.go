@@ -23,9 +23,9 @@ func (h *CardHandler) CreateCard(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErros := h.ValidateBodyRequest(payload)
-	if validationErros != nil {
-		return models.SendFailedValidationResponse(c, validationErros)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	card, err := h.cardService.CreateCard(*payload)
@@ -43,9 +43,9 @@ func (h *CardHandler) UpdateCard(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErros := h.ValidateBodyRequest(payload)
-	if validationErros != nil {
-		return models.SendFailedValidationResponse(c, validationErros)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	payload.ID = id

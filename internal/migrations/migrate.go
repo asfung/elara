@@ -52,6 +52,11 @@ var entityRegistry = map[string][]interface{}{
 		&entities.Wallet{},
 		&entities.WalletTransaction{},
 	},
+	"portfolio_entity": {
+		&entities.Asset{},
+		&entities.Portfolio{},
+		&entities.PortfolioAsset{},
+	},
 }
 
 func main() {

@@ -76,9 +76,9 @@ func (h *AuthHandler) Register(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validateErros := h.ValidateBodyRequest(payload)
-	if validateErros != nil {
-		return models.SendFailedValidationResponse(c, validateErros)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	user, err := h.authService.Register(*payload)

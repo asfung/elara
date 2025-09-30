@@ -21,9 +21,9 @@ func (h *P2PTransferHandler) CreateP2PTransfer(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErors := h.ValidateBodyRequest(payload)
-	if validationErors != nil {
-		return models.SendFailedValidationResponse(c, validationErors)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	p2pTransfer, err := h.p2pTransferService.CreateP2PTransfer(*payload)
@@ -39,9 +39,9 @@ func (h *P2PTransferHandler) Update2PTransfer(c echo.Context) error {
 		return models.SendBadRequestResponse(c, err.Error())
 	}
 
-	validationErors := h.ValidateBodyRequest(payload)
-	if validationErors != nil {
-		return models.SendFailedValidationResponse(c, validationErors)
+	validationErrors := h.ValidateBodyRequest(payload)
+	if validationErrors != nil {
+		return models.SendFailedValidationResponse(c, validationErrors)
 	}
 
 	p2pTransfer, err := h.p2pTransferService.UpdateP2PTransfer(*payload)
